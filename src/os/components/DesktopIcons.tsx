@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useOS } from "../store";
-import { jasonImg } from "../themes";
+import { themeIconOverride } from "../themes";
 import type { DockItem } from "./Dock";
 
 interface Props {
@@ -10,20 +10,20 @@ interface Props {
 
 export function DesktopIcons({ items, onOpen }: Props) {
   const os = useOS();
-  const isJason = os.state.theme === "jason";
+  const overrideImg = themeIconOverride(os.state.theme);
 
   return (
     <div className="absolute inset-0 pointer-events-none">
       {items.map((it, idx) => {
         const def = { x: window.innerWidth - 110, y: 50 + idx * 96 };
         const pos = os.state.desktopIcons[it.id] || def;
-        return <Icon key={it.id} item={it} pos={pos} onOpen={() => onOpen(it.id)} isJason={isJason} />;
+        return <Icon key={it.id} item={it} pos={pos} onOpen={() => onOpen(it.id)} overrideImg={overrideImg} />;
       })}
     </div>
   );
 }
 
-function Icon({ item, pos, onOpen, isJason }: { item: DockItem & { title: string }; pos: { x: number; y: number }; onOpen: () => void; isJason: boolean }) {
+function Icon({ item, pos, onOpen, overrideImg }: { item: DockItem & { title: string }; pos: { x: number; y: number }; onOpen: () => void; overrideImg: string | null }) {
   const os = useOS();
   const ref = useRef<HTMLDivElement>(null);
   const drag = useRef<{ ox: number; oy: number; moved: boolean } | null>(null);
@@ -52,11 +52,11 @@ function Icon({ item, pos, onOpen, isJason }: { item: DockItem & { title: string
       onDoubleClick={onOpen}
     >
       <div
-        className="w-14 h-14 rounded-2xl grid place-items-center shadow-lg group-hover:scale-105 transition-transform"
-        style={{ background: isJason ? "transparent" : `linear-gradient(135deg, ${item.color}, ${item.color}cc)` }}
+        className="w-14 h-14 rounded-[18px] grid place-items-center shadow-lg group-hover:scale-105 transition-transform liquid-glass"
+        style={{ background: overrideImg ? "transparent" : `linear-gradient(135deg, ${item.color}, ${item.color}cc)` }}
       >
-        {isJason ? (
-          <img src={jasonImg} alt={item.name} className="w-full h-full rounded-2xl object-cover" />
+        {overrideImg ? (
+          <img src={overrideImg} alt={item.name} className="w-full h-full rounded-[18px] object-cover" />
         ) : (
           <item.Icon className="w-7 h-7 text-white drop-shadow" />
         )}
