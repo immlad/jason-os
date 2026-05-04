@@ -9,7 +9,7 @@ export function ControlCenter({ onClose }: { onClose: () => void }) {
   if (os.state.sebastianUnlocked) themes.push("sebastian");
 
   return (
-    <div className="fixed top-9 right-2 w-80 glass-strong rounded-2xl p-3 z-50 animate-fade-up shadow-2xl os-text">
+    <div className="fixed top-9 right-2 w-80 liquid-glass rounded-3xl p-3 z-50 animate-fade-up shadow-2xl os-text">
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="glass rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2 text-xs"><Wifi className="w-4 h-4" /> Wi-Fi</div>

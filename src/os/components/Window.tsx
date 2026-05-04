@@ -44,7 +44,7 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
 
   return (
     <div
-      className="absolute glass-strong rounded-2xl overflow-hidden shadow-2xl animate-window-open flex flex-col"
+      className="absolute liquid-glass rounded-2xl overflow-hidden shadow-2xl animate-window-open flex flex-col"
       style={{ ...style, zIndex: z, boxShadow: "0 30px 80px hsl(var(--os-shadow))" }}
       onMouseDown={onFocus}
     >
