@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { OSState, ThemeName, User, GlobalMessage, TrollEvent } from "./types";
 
-const KEY = "jason-os-state-v1";
+const KEY = "jason-os-state-v2";
 
 const defaultState: OSState = {
   users: [],
@@ -10,6 +10,10 @@ const defaultState: OSState = {
   sebastianUnlocked: false,
   globalMessages: [],
   trollEvents: [],
+  dockSide: "bottom",
+  dockShape: "pill",
+  dockOrder: [],
+  desktopIcons: {},
 };
 
 function load(): OSState {
@@ -81,6 +85,22 @@ export function useOS() {
     },
     setTheme(theme: ThemeName) {
       state = { ...state, theme };
+      persist();
+    },
+    setDockSide(dockSide: OSState["dockSide"]) {
+      state = { ...state, dockSide };
+      persist();
+    },
+    setDockShape(dockShape: OSState["dockShape"]) {
+      state = { ...state, dockShape };
+      persist();
+    },
+    setDockOrder(dockOrder: string[]) {
+      state = { ...state, dockOrder };
+      persist();
+    },
+    setDesktopIcon(id: string, pos: { x: number; y: number }) {
+      state = { ...state, desktopIcons: { ...state.desktopIcons, [id]: pos } };
       persist();
     },
     unlockSebastian() {

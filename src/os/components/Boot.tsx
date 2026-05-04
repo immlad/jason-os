@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useOS } from "../store";
+import { jasonImg } from "../themes";
 
 export function Boot() {
   const os = useOS();
@@ -20,8 +21,8 @@ export function Boot() {
       <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
       <div className="relative glass-strong rounded-2xl p-8 w-[360px] animate-fade-up shadow-2xl">
         <div className="text-center mb-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-[hsl(var(--os-accent))] to-[hsl(var(--os-accent-2))] grid place-items-center text-3xl font-bold text-white mb-3">
-            J
+          <div className="w-24 h-24 mx-auto rounded-full overflow-hidden ring-2 ring-white/40 shadow-2xl mb-3">
+            <img src={jasonImg} alt="Jason" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-xl font-semibold os-text">Welcome to JASON OS</h1>
           <p className="text-xs os-text-muted mt-1">{mode === "login" ? "Sign in to continue" : "Create your account"}</p>

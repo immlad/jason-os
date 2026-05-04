@@ -28,4 +28,8 @@ export interface OSState {
   sebastianUnlocked: boolean;
   globalMessages: GlobalMessage[];
   trollEvents: TrollEvent[];
+  dockSide: "bottom" | "left" | "right" | "top";
+  dockShape: "pill" | "rounded" | "square";
+  dockOrder: string[];
+  desktopIcons: Record<string, { x: number; y: number }>;
 }
