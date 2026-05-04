@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { Wifi, Battery, Search, Bell, Settings2 } from "lucide-react";
 import { useOS } from "../store";
 
+function JasonLogo() {
+  // Stylized "J" mark — a fake apple-style monochrome glyph
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M14 2.5c.4 1.6 1.7 2.7 3.3 3 .2 1.5-.5 3-1.8 3.7C16 9.6 16 9.9 16 10.3v6.4c0 3-2.3 5.4-5.5 5.4S5 19.7 5 16.7c0-2.6 1.9-4.7 4.4-5.1.7-.1 1.3.5 1.3 1.2 0 .6-.4 1.1-1 1.2-1.5.3-2.6 1.6-2.6 3.1 0 1.7 1.4 3 3.4 3s3.4-1.3 3.4-3V8.6c0-2.3 1.4-4.4 3.5-5.4-.1 0-.2-.1-.3-.1-.7-.2-1.2-.5-1.5-1l1.4-.4z"/>
+    </svg>
+  );
+}
+
 interface Props {
   appName: string;
   onAbout: () => void;
