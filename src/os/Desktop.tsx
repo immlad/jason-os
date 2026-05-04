@@ -6,6 +6,7 @@ import { Window } from "./components/Window";
 import { Dock, DockItem } from "./components/Dock";
 import { MenuBar } from "./components/MenuBar";
 import { ControlCenter } from "./components/ControlCenter";
+import { DesktopIcons } from "./components/DesktopIcons";
 import { About } from "./apps/About";
 import { Settings } from "./apps/Settings";
 import { LiquidAura, Nebulo } from "./apps/LiquidAura";
@@ -98,6 +99,8 @@ export function Desktop() {
     <div className="fixed inset-0 overflow-hidden select-none" style={{ backgroundImage: `url(${wp})`, backgroundSize: "cover", backgroundPosition: "center" }}>
       <MenuBar appName={topApp?.name || "Finder"} onAbout={() => openApp("about")} onToggleControl={() => setShowCC(v => !v)} />
 
+      <DesktopIcons items={apps} onOpen={openApp} />
+
       {/* Big JASON OS title */}
       <div className="absolute inset-x-0 top-1/4 text-center pointer-events-none z-10">
         <h1 className="text-7xl md:text-9xl font-black text-white drop-shadow-2xl tracking-tight" style={{ textShadow: "0 6px 40px rgba(0,0,0,0.5)" }}>
@@ -128,7 +131,7 @@ export function Desktop() {
         );
       })}
 
-      <Dock items={apps} onOpen={openApp} />
+      <Dock items={apps} onOpen={openApp} openIds={wins.map(w => w.appId)} />
 
       {/* Global broadcast notification */}
       {activeGlobal && (
