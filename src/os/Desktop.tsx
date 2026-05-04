@@ -101,14 +101,14 @@ export function Desktop() {
 
       <DesktopIcons items={apps} onOpen={openApp} />
 
-      {/* Big JASON OS title */}
-      <div className="absolute inset-x-0 top-1/4 text-center pointer-events-none z-10">
-        <h1 className="text-7xl md:text-9xl font-black text-white drop-shadow-2xl tracking-tight" style={{ textShadow: "0 6px 40px rgba(0,0,0,0.5)" }}>
-          JASON OS
-        </h1>
-        <p key={phraseIdx} className="mt-4 text-2xl md:text-3xl font-semibold text-white drop-shadow-lg animate-fade-up" style={{ textShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
-          {PHRASES[phraseIdx]}
-        </p>
+      {/* Big JASON OS title — liquid glass */}
+      <div className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-5 pointer-events-none z-10 px-4">
+        <div className="liquid-glass rounded-[40px] px-10 py-6 inline-block">
+          <h1 className="text-6xl md:text-8xl font-black liquid-text tracking-tight">JASON OS</h1>
+        </div>
+        <div key={phraseIdx} className="liquid-chip rounded-full px-6 py-2.5 animate-fade-up">
+          <p className="text-xl md:text-2xl font-semibold liquid-text tracking-wide">{PHRASES[phraseIdx]}</p>
+        </div>
       </div>
 
       {showCC && <ControlCenter onClose={() => setShowCC(false)} />}
