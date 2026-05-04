@@ -23,3 +23,9 @@ export const themeLabels: Record<ThemeName, string> = {
 
 export const jasonImg = jason;
 export const sebastianImg = sebastian;
+
+export function themeIconOverride(theme: ThemeName): string | null {
+  if (theme === "jason") return jason;
+  if (theme === "sebastian") return sebastian;
+  return null;
+}
