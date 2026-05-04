@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { jasonImg } from "../themes";
+import { themeIconOverride } from "../themes";
 import { useOS } from "../store";
 
 export interface DockItem {
@@ -18,7 +18,7 @@ interface Props {
 
 export function Dock({ items, onOpen, openIds }: Props) {
   const os = useOS();
-  const isJason = os.state.theme === "jason";
+  const overrideImg = themeIconOverride(os.state.theme);
   const side = os.state.dockSide;
   const shape = os.state.dockShape;
   const isVertical = side === "left" || side === "right";
@@ -119,15 +119,15 @@ export function Dock({ items, onOpen, openIds }: Props) {
                 onClick={() => onOpen(it.id)}
                 className={`group relative w-16 h-16 ${iconRadius} grid place-items-center transition-all duration-200 ease-out ${isOver ? "ring-2 ring-white/60" : ""}`}
                 style={{
-                  background: isJason ? "transparent" : `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
+                  background: overrideImg ? "transparent" : `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
                   transform: `scale(${scale}) ${isVertical ? `translateX(${(scale - 1) * 14}px)` : `translateY(${-(scale - 1) * 14}px)`}`,
                   transformOrigin: side,
                   boxShadow: scale > 1 ? "0 12px 30px rgba(0,0,0,0.35)" : "0 4px 12px rgba(0,0,0,0.2)",
                 }}
                 aria-label={it.name}
               >
-                {isJason ? (
-                  <img src={jasonImg} alt={it.name} className={`w-full h-full ${iconRadius} object-cover`} />
+                {overrideImg ? (
+                  <img src={overrideImg} alt={it.name} className={`w-full h-full ${iconRadius} object-cover`} />
                 ) : (
                   <it.Icon className="w-7 h-7 text-white drop-shadow" />
                 )}
