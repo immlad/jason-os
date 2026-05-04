@@ -61,16 +61,16 @@ export function Dock({ items, onOpen, openIds }: Props) {
     return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); };
   }, [dragSide, side, os]);
 
-  const radiusClass = shape === "pill" ? "rounded-full" : shape === "rounded" ? "rounded-3xl" : "rounded-xl";
-  const iconRadius = shape === "pill" ? "rounded-2xl" : shape === "rounded" ? "rounded-2xl" : "rounded-lg";
+  const radiusClass = shape === "pill" ? "rounded-[44px]" : shape === "rounded" ? "rounded-[28px]" : "rounded-2xl";
+  const iconRadius = "rounded-[18px]"; // rounded-square always
 
   // Magnification scale by distance to hover
   function scaleFor(i: number) {
     if (hoverIdx === null) return 1;
     const d = Math.abs(i - hoverIdx);
-    if (d === 0) return 1.5;
-    if (d === 1) return 1.25;
-    if (d === 2) return 1.1;
+    if (d === 0) return 1.6;
+    if (d === 1) return 1.32;
+    if (d === 2) return 1.14;
     return 1;
   }
 
@@ -96,7 +96,7 @@ export function Dock({ items, onOpen, openIds }: Props) {
     <div className={`fixed ${posClass} z-40`}>
       <div
         ref={containerRef}
-        className={`glass-strong ${radiusClass} shadow-2xl flex ${isVertical ? "flex-col py-3 px-2 items-center" : "flex-row px-3 py-2 items-end"} gap-1`}
+        className={`liquid-glass ${radiusClass} shadow-2xl flex ${isVertical ? "flex-col py-4 px-3 items-center" : "flex-row px-5 py-3 items-end"} gap-2`}
         style={{ cursor: dragSide ? "grabbing" : "default" }}
         onMouseLeave={() => setHoverIdx(null)}
         onDoubleClick={() => setDragSide(true)}
@@ -117,7 +117,7 @@ export function Dock({ items, onOpen, openIds }: Props) {
                 onDragEnd={() => { setDragId(null); setOverId(null); }}
                 onMouseEnter={() => setHoverIdx(i)}
                 onClick={() => onOpen(it.id)}
-                className={`group relative w-14 h-14 ${iconRadius} grid place-items-center transition-all duration-200 ease-out ${isOver ? "ring-2 ring-white/60" : ""}`}
+                className={`group relative w-16 h-16 ${iconRadius} grid place-items-center transition-all duration-200 ease-out ${isOver ? "ring-2 ring-white/60" : ""}`}
                 style={{
                   background: isJason ? "transparent" : `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
                   transform: `scale(${scale}) ${isVertical ? `translateX(${(scale - 1) * 14}px)` : `translateY(${-(scale - 1) * 14}px)`}`,
