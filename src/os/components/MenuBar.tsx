@@ -23,8 +23,8 @@ export function MenuBar({ appName, onAbout, onToggleControl }: Props) {
   return (
     <div className="fixed top-0 inset-x-0 h-7 glass z-50 flex items-center px-3 text-xs os-text">
       <div className="relative">
-        <button onClick={() => setOpenMenu(openMenu === "apple" ? null : "apple")} className="px-2 py-0.5 hover:bg-white/20 rounded font-bold">
-          
+        <button onClick={() => setOpenMenu(openMenu === "apple" ? null : "apple")} className="px-2 py-0.5 hover:bg-white/20 rounded grid place-items-center" aria-label="JASON menu">
+          <JasonLogo />
         </button>
         {openMenu === "apple" && (
           <div className="absolute top-7 left-0 glass-strong rounded-lg p-1 min-w-[180px] shadow-xl animate-fade-up">
