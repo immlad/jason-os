@@ -135,6 +135,13 @@ export function useOS() {
       };
       persist();
     },
+    setCustomJumpscare(dataUrl: string | null) {
+      state = {
+        ...state,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, customJumpscare: dataUrl || undefined } : u),
+      };
+      persist();
+    },
     addWebApp(app: Omit<WebApp, "id">) {
       const wa: WebApp = { ...app, id: `web-${crypto.randomUUID()}` };
       state = {

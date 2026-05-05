@@ -10,6 +10,7 @@ export interface User {
   customFont?: { name: string; dataUrl: string };
   webApps?: WebApp[];
   pinnedApps?: string[]; // app ids pinned to the dock
+  customJumpscare?: string; // data URL — overrides default scare image
 }
 
 export interface WebApp {
