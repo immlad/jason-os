@@ -4,9 +4,10 @@ import type { OSState, ThemeName, User, GlobalMessage, TrollEvent, WebApp } from
 const KEY = "jason-os-state-v2";
 const LAST_USER_KEY = "jason-os-last-user";
 const CHANNEL = "jason-os-sync";
-const bc: BroadcastChannel | null = typeof window !== "undefined" && "BroadcastChannel" in window
-  ? new BroadcastChannel(CHANNEL)
-  : null;
+const bc: BroadcastChannel | null =
+  typeof window !== "undefined" && "BroadcastChannel" in window
+    ? new BroadcastChannel(CHANNEL)
+    : null;
 
 const defaultState: OSState = {
   users: [],
@@ -21,6 +22,10 @@ const defaultState: OSState = {
   dockShape: "pill",
   dockOrder: [],
   desktopIcons: {},
+
+  // NEW LIVE SYSTEM
+  liveUsers: {}, // { username: timestamp }
+  activityFeed: [], // { user, type, detail, time }
 };
 
 function load(): OSState {
@@ -39,8 +44,9 @@ const listeners = new Set<() => void>();
 function persist() {
   localStorage.setItem(KEY, JSON.stringify(state));
   listeners.forEach((l) => l());
-  // Push to other tabs/windows instantly (storage event alone is not always reliable)
-  try { bc?.postMessage({ type: "state", state }); } catch {}
+  try {
+    bc?.postMessage({ type: "state", state });
+  } catch {}
 }
 
 // cross-tab sync
@@ -53,13 +59,15 @@ if (typeof window !== "undefined") {
       } catch {}
     }
   });
+
   bc?.addEventListener("message", (e) => {
     if (e.data?.type === "state" && e.data.state) {
       state = { ...defaultState, ...e.data.state };
       listeners.forEach((l) => l());
     }
   });
-  // Polling fallback (covers private mode / restricted contexts)
+
+  // Poll fallback
   setInterval(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -78,16 +86,19 @@ export function useOS() {
   useEffect(() => {
     const l = () => setTick((t) => t + 1);
     listeners.add(l);
-    return () => {
-      listeners.delete(l);
-    };
+    return () => listeners.delete(l);
   }, []);
+
   return {
     state,
-    signup(username: string, password: string): { ok: boolean; error?: string } {
+
+    // -------------------------
+    // AUTH
+    // -------------------------
+    signup(username: string, password: string) {
       const u = username.trim();
       if (!u || !password) return { ok: false, error: "Username and password required" };
-      // Re-read from localStorage to defeat any stale in-memory state across tabs
+
       try {
         const raw = localStorage.getItem(KEY);
         if (raw) {
@@ -95,17 +106,22 @@ export function useOS() {
           if (Array.isArray(fresh.users)) state = { ...state, users: fresh.users };
         }
       } catch {}
+
       if (state.users.find((x) => x.username.toLowerCase() === u.toLowerCase()))
         return { ok: false, error: "Username already taken" };
+
       const isAdmin = ["jason", "minh"].includes(u.toLowerCase());
       const user: User = { username: u, password, isAdmin };
+
       state = { ...state, users: [...state.users, user], currentUser: u };
-      try { localStorage.setItem(LAST_USER_KEY, u); } catch {}
+      try {
+        localStorage.setItem(LAST_USER_KEY, u);
+      } catch {}
       persist();
       return { ok: true };
     },
-    login(username: string, password: string): { ok: boolean; error?: string } {
-      // Re-read users so a freshly-signed-up account in another tab is visible
+
+    login(username: string, password: string) {
       try {
         const raw = localStorage.getItem(KEY);
         if (raw) {
@@ -113,97 +129,147 @@ export function useOS() {
           if (Array.isArray(fresh.users)) state = { ...state, users: fresh.users };
         }
       } catch {}
+
       const user = state.users.find(
         (x) => x.username.toLowerCase() === username.trim().toLowerCase()
       );
       if (!user) return { ok: false, error: "User not found" };
       if (user.banned) return { ok: false, error: "You have been banned" };
       if (user.password !== password) return { ok: false, error: "Wrong password" };
+
       state = { ...state, currentUser: user.username };
-      try { localStorage.setItem(LAST_USER_KEY, user.username); } catch {}
+      try {
+        localStorage.setItem(LAST_USER_KEY, user.username);
+      } catch {}
       persist();
       return { ok: true };
     },
+
     logout() {
       state = { ...state, currentUser: null };
       persist();
     },
+
+    // -------------------------
+    // THEMES + SETTINGS
+    // -------------------------
     setTheme(theme: ThemeName) {
       state = {
         ...state,
         theme,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, theme } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser ? { ...u, theme } : u
+        ),
       };
       persist();
     },
-    setDockSide(dockSide: OSState["dockSide"]) {
+
+    setDockSide(dockSide) {
       state = { ...state, dockSide };
       persist();
     },
-    setDockShape(dockShape: OSState["dockShape"]) {
+
+    setDockShape(dockShape) {
       state = { ...state, dockShape };
       persist();
     },
-    setDockOrder(dockOrder: string[]) {
+
+    setDockOrder(dockOrder) {
       state = { ...state, dockOrder };
       persist();
     },
-    setDesktopIcon(id: string, pos: { x: number; y: number }) {
-      state = { ...state, desktopIcons: { ...state.desktopIcons, [id]: pos } };
+
+    setDesktopIcon(id, pos) {
+      state = {
+        ...state,
+        desktopIcons: { ...state.desktopIcons, [id]: pos },
+      };
       persist();
     },
+
     unlockSebastian() {
       state = { ...state, sebastianUnlocked: true };
       persist();
     },
+
     unlockLeo() {
       state = { ...state, leoUnlocked: true };
       persist();
     },
+
     unlockJasonCat() {
       state = { ...state, jasonCatUnlocked: true };
       persist();
     },
-    setCustomWallpaper(dataUrl: string | null) {
+
+    setCustomWallpaper(dataUrl) {
       state = {
         ...state,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, customWallpaper: dataUrl || undefined } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser
+            ? { ...u, customWallpaper: dataUrl || undefined }
+            : u
+        ),
       };
       persist();
     },
-    setCustomFont(font: { name: string; dataUrl: string } | null) {
+
+    setCustomFont(font) {
       state = {
         ...state,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, customFont: font || undefined } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser
+            ? { ...u, customFont: font || undefined }
+            : u
+        ),
       };
       persist();
     },
-    setCustomJumpscare(dataUrl: string | null) {
+
+    setCustomJumpscare(dataUrl) {
       state = {
         ...state,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, customJumpscare: dataUrl || undefined } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser
+            ? { ...u, customJumpscare: dataUrl || undefined }
+            : u
+        ),
       };
       persist();
     },
-    addWebApp(app: Omit<WebApp, "id">) {
+
+    // -------------------------
+    // WEB APPS
+    // -------------------------
+    addWebApp(app) {
       const wa: WebApp = { ...app, id: `web-${crypto.randomUUID()}` };
       state = {
         ...state,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, webApps: [...(u.webApps || []), wa] } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser
+            ? { ...u, webApps: [...(u.webApps || []), wa] }
+            : u
+        ),
       };
       persist();
     },
-    removeWebApp(id: string) {
+
+    removeWebApp(id) {
       state = {
         ...state,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, webApps: (u.webApps || []).filter(w => w.id !== id) } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser
+            ? { ...u, webApps: (u.webApps || []).filter((w) => w.id !== id) }
+            : u
+        ),
       };
       persist();
     },
-    pinApp(id: string) {
+
+    pinApp(id) {
       state = {
         ...state,
-        users: state.users.map(u => {
+        users: state.users.map((u) => {
           if (u.username !== state.currentUser) return u;
           const cur = u.pinnedApps || [];
           if (cur.includes(id)) return u;
@@ -212,14 +278,23 @@ export function useOS() {
       };
       persist();
     },
-    unpinApp(id: string) {
+
+    unpinApp(id) {
       state = {
         ...state,
-        users: state.users.map(u => u.username === state.currentUser ? { ...u, pinnedApps: (u.pinnedApps || []).filter(x => x !== id) } : u),
+        users: state.users.map((u) =>
+          u.username === state.currentUser
+            ? { ...u, pinnedApps: (u.pinnedApps || []).filter((x) => x !== id) }
+            : u
+        ),
       };
       persist();
     },
-    sendGlobal(text: string) {
+
+    // -------------------------
+    // GLOBAL MESSAGES
+    // -------------------------
+    sendGlobal(text) {
       if (!state.currentUser) return;
       const m: GlobalMessage = {
         id: crypto.randomUUID(),
@@ -227,10 +302,17 @@ export function useOS() {
         text,
         ts: Date.now(),
       };
-      state = { ...state, globalMessages: [...state.globalMessages, m].slice(-100) };
+      state = {
+        ...state,
+        globalMessages: [...state.globalMessages, m].slice(-100),
+      };
       persist();
     },
-    ban(username: string) {
+
+    // -------------------------
+    // ADMIN
+    // -------------------------
+    ban(username) {
       state = {
         ...state,
         users: state.users.map((u) =>
@@ -239,7 +321,8 @@ export function useOS() {
       };
       persist();
     },
-    makeAdmin(username: string) {
+
+    makeAdmin(username) {
       state = {
         ...state,
         users: state.users.map((u) =>
@@ -248,18 +331,69 @@ export function useOS() {
       };
       persist();
     },
-    troll(target: string, imageUrl: string) {
+
+    troll(target, imageUrl) {
       const t: TrollEvent = {
         id: crypto.randomUUID(),
         target,
         imageUrl,
         ts: Date.now(),
       };
-      state = { ...state, trollEvents: [...state.trollEvents, t].slice(-20) };
+      state = {
+        ...state,
+        trollEvents: [...state.trollEvents, t].slice(-20),
+      };
       persist();
     },
-    dismissTroll(id: string) {
-      state = { ...state, trollEvents: state.trollEvents.filter((t) => t.id !== id) };
+
+    dismissTroll(id) {
+      state = {
+        ...state,
+        trollEvents: state.trollEvents.filter((t) => t.id !== id),
+      };
+      persist();
+    },
+
+    // -------------------------
+    // LIVE SYSTEM (NEW)
+    // -------------------------
+    userOnline(username) {
+      state = {
+        ...state,
+        liveUsers: {
+          ...state.liveUsers,
+          [username]: Date.now(),
+        },
+      };
+      persist();
+    },
+
+    userOffline(username) {
+      const next = { ...state.liveUsers };
+      delete next[username];
+      state = { ...state, liveUsers: next };
+      persist();
+    },
+
+    heartbeat(username) {
+      state = {
+        ...state,
+        liveUsers: {
+          ...state.liveUsers,
+          [username]: Date.now(),
+        },
+      };
+      persist();
+    },
+
+    pushActivity(event) {
+      state = {
+        ...state,
+        activityFeed: [
+          ...state.activityFeed,
+          { ...event, time: Date.now() },
+        ].slice(-200),
+      };
       persist();
     },
   };
