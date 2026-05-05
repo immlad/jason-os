@@ -9,6 +9,7 @@ const defaultState: OSState = {
   theme: "cloud",
   sebastianUnlocked: false,
   leoUnlocked: false,
+  jasonCatUnlocked: false,
   globalMessages: [],
   trollEvents: [],
   dockSide: "bottom",
@@ -85,7 +86,11 @@ export function useOS() {
       persist();
     },
     setTheme(theme: ThemeName) {
-      state = { ...state, theme };
+      state = {
+        ...state,
+        theme,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, theme } : u),
+      };
       persist();
     },
     setDockSide(dockSide: OSState["dockSide"]) {
@@ -110,6 +115,24 @@ export function useOS() {
     },
     unlockLeo() {
       state = { ...state, leoUnlocked: true };
+      persist();
+    },
+    unlockJasonCat() {
+      state = { ...state, jasonCatUnlocked: true };
+      persist();
+    },
+    setCustomWallpaper(dataUrl: string | null) {
+      state = {
+        ...state,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, customWallpaper: dataUrl || undefined } : u),
+      };
+      persist();
+    },
+    setCustomFont(font: { name: string; dataUrl: string } | null) {
+      state = {
+        ...state,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, customFont: font || undefined } : u),
+      };
       persist();
     },
     sendGlobal(text: string) {

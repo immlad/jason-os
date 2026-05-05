@@ -167,6 +167,16 @@ All colors MUST be HSL.
   --os-accent-2: 200 60% 60%;
   --os-dock: 25 40% 12% / 0.55;
 }
+.theme-jasoncat {
+  --os-text: 40 90% 96%;
+  --os-text-muted: 35 40% 80%;
+  --os-glass: 18 70% 12% / 0.6;
+  --os-glass-strong: 18 70% 8% / 0.9;
+  --os-border: 35 100% 60% / 0.45;
+  --os-accent: 30 100% 55%;
+  --os-accent-2: 50 100% 60%;
+  --os-dock: 18 70% 12% / 0.6;
+}
 
 @layer utilities {
   .glass {
