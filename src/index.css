@@ -181,14 +181,14 @@ All colors MUST be HSL.
 @layer utilities {
   .glass {
     background: hsl(var(--os-glass));
-    backdrop-filter: saturate(180%) blur(28px);
-    -webkit-backdrop-filter: saturate(180%) blur(28px);
+    backdrop-filter: saturate(200%) blur(36px);
+    -webkit-backdrop-filter: saturate(200%) blur(36px);
     border: 1px solid hsl(var(--os-border));
   }
   .glass-strong {
-    background: hsl(var(--os-glass-strong));
-    backdrop-filter: saturate(180%) blur(36px);
-    -webkit-backdrop-filter: saturate(180%) blur(36px);
+    background: hsl(var(--os-glass));
+    backdrop-filter: saturate(220%) blur(44px);
+    -webkit-backdrop-filter: saturate(220%) blur(44px);
     border: 1px solid hsl(var(--os-border));
   }
   .liquid-glass {
