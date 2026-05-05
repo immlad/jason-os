@@ -12,15 +12,15 @@ All colors MUST be HSL.
     --foreground: 222.2 84% 4.9%;
 
     /* OS surfaces */
-    --os-glass: 0 0% 100% / 0.55;
-    --os-glass-strong: 0 0% 100% / 0.78;
+    --os-glass: 0 0% 100% / 0.28;
+    --os-glass-strong: 0 0% 100% / 0.45;
     --os-border: 0 0% 100% / 0.35;
     --os-text: 222 47% 11%;
     --os-text-muted: 222 20% 35%;
     --os-accent: 210 100% 56%;
     --os-accent-2: 280 90% 65%;
     --os-shadow: 220 40% 10% / 0.25;
-    --os-dock: 0 0% 100% / 0.35;
+    --os-dock: 0 0% 100% / 0.32;
     --wallpaper-url: url('');
 
     --card: 0 0% 100%;
@@ -110,99 +110,99 @@ All colors MUST be HSL.
 .theme-cloud {
   --os-text: 222 47% 11%;
   --os-text-muted: 222 20% 35%;
-  --os-glass: 0 0% 100% / 0.55;
-  --os-glass-strong: 0 0% 100% / 0.8;
+  --os-glass: 0 0% 100% / 0.28;
+  --os-glass-strong: 0 0% 100% / 0.45;
   --os-border: 0 0% 100% / 0.5;
   --os-accent: 210 100% 56%;
   --os-accent-2: 200 100% 70%;
-  --os-dock: 0 0% 100% / 0.35;
+  --os-dock: 0 0% 100% / 0.32;
 }
 .theme-night {
   --os-text: 210 40% 98%;
   --os-text-muted: 215 20% 75%;
-  --os-glass: 240 30% 10% / 0.55;
-  --os-glass-strong: 240 30% 8% / 0.85;
+  --os-glass: 240 30% 10% / 0.28;
+  --os-glass-strong: 240 30% 8% / 0.45;
   --os-border: 260 50% 70% / 0.25;
   --os-accent: 260 90% 70%;
   --os-accent-2: 290 90% 75%;
-  --os-dock: 240 30% 10% / 0.55;
+  --os-dock: 240 30% 10% / 0.32;
 }
 .theme-forest {
   --os-text: 80 30% 96%;
   --os-text-muted: 90 20% 80%;
-  --os-glass: 140 30% 10% / 0.55;
-  --os-glass-strong: 140 30% 8% / 0.85;
+  --os-glass: 140 30% 10% / 0.28;
+  --os-glass-strong: 140 30% 8% / 0.45;
   --os-border: 90 50% 70% / 0.3;
   --os-accent: 140 70% 55%;
   --os-accent-2: 80 70% 60%;
-  --os-dock: 140 30% 10% / 0.5;
+  --os-dock: 140 30% 10% / 0.32;
 }
 .theme-jason {
   --os-text: 30 80% 95%;
   --os-text-muted: 30 30% 80%;
-  --os-glass: 20 60% 12% / 0.55;
-  --os-glass-strong: 20 60% 10% / 0.85;
+  --os-glass: 20 60% 12% / 0.28;
+  --os-glass-strong: 20 60% 10% / 0.45;
   --os-border: 30 90% 60% / 0.3;
   --os-accent: 20 100% 60%;
   --os-accent-2: 350 100% 65%;
-  --os-dock: 20 60% 12% / 0.55;
+  --os-dock: 20 60% 12% / 0.32;
 }
 .theme-sebastian {
   --os-text: 40 80% 95%;
   --os-text-muted: 40 30% 80%;
-  --os-glass: 20 80% 14% / 0.6;
-  --os-glass-strong: 20 80% 10% / 0.88;
+  --os-glass: 20 80% 14% / 0.28;
+  --os-glass-strong: 20 80% 10% / 0.45;
   --os-border: 35 90% 55% / 0.35;
   --os-accent: 35 95% 55%;
   --os-accent-2: 15 90% 55%;
-  --os-dock: 20 80% 12% / 0.6;
+  --os-dock: 20 80% 12% / 0.32;
 }
 .theme-leo {
   --os-text: 30 60% 96%;
   --os-text-muted: 30 20% 80%;
-  --os-glass: 25 40% 14% / 0.55;
-  --os-glass-strong: 25 40% 10% / 0.85;
+  --os-glass: 25 40% 14% / 0.28;
+  --os-glass-strong: 25 40% 10% / 0.45;
   --os-border: 30 70% 60% / 0.3;
   --os-accent: 28 90% 58%;
   --os-accent-2: 200 60% 60%;
-  --os-dock: 25 40% 12% / 0.55;
+  --os-dock: 25 40% 12% / 0.32;
 }
 .theme-jasoncat {
   --os-text: 40 90% 96%;
   --os-text-muted: 35 40% 80%;
-  --os-glass: 18 70% 12% / 0.6;
-  --os-glass-strong: 18 70% 8% / 0.9;
+  --os-glass: 18 70% 12% / 0.28;
+  --os-glass-strong: 18 70% 8% / 0.45;
   --os-border: 35 100% 60% / 0.45;
   --os-accent: 30 100% 55%;
   --os-accent-2: 50 100% 60%;
-  --os-dock: 18 70% 12% / 0.6;
+  --os-dock: 18 70% 12% / 0.32;
 }
 
 @layer utilities {
   .glass {
     background: hsl(var(--os-glass));
-    backdrop-filter: saturate(180%) blur(28px);
-    -webkit-backdrop-filter: saturate(180%) blur(28px);
+    backdrop-filter: saturate(200%) blur(36px);
+    -webkit-backdrop-filter: saturate(200%) blur(36px);
     border: 1px solid hsl(var(--os-border));
   }
   .glass-strong {
-    background: hsl(var(--os-glass-strong));
-    backdrop-filter: saturate(180%) blur(36px);
-    -webkit-backdrop-filter: saturate(180%) blur(36px);
+    background: hsl(var(--os-glass));
+    backdrop-filter: saturate(220%) blur(44px);
+    -webkit-backdrop-filter: saturate(220%) blur(44px);
     border: 1px solid hsl(var(--os-border));
   }
   .liquid-glass {
     position: relative;
     background:
-      linear-gradient(135deg, hsl(0 0% 100% / 0.18), hsl(0 0% 100% / 0.04) 50%, hsl(0 0% 100% / 0.12)),
-      hsl(var(--os-glass-strong));
-    backdrop-filter: saturate(200%) blur(40px);
-    -webkit-backdrop-filter: saturate(200%) blur(40px);
-    border: 1px solid hsl(0 0% 100% / 0.25);
+      linear-gradient(135deg, hsl(0 0% 100% / 0.12), hsl(0 0% 100% / 0.02) 50%, hsl(0 0% 100% / 0.08)),
+      hsl(var(--os-glass) );
+    backdrop-filter: saturate(200%) blur(44px);
+    -webkit-backdrop-filter: saturate(200%) blur(44px);
+    border: 1px solid hsl(0 0% 100% / 0.18);
     box-shadow:
-      inset 0 1px 0 hsl(0 0% 100% / 0.45),
-      inset 0 -1px 0 hsl(0 0% 0% / 0.15),
-      0 20px 50px hsl(220 40% 10% / 0.35);
+      inset 0 1px 0 hsl(0 0% 100% / 0.35),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.12),
+      0 20px 50px hsl(220 40% 10% / 0.28);
   }
   .liquid-text {
     color: hsl(0 0% 100%);
