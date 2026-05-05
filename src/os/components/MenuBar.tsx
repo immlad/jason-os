@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wifi, Battery, Search, Bell, Settings2 } from "lucide-react";
+import { Wifi, Battery, Settings2 } from "lucide-react";
 import { useOS } from "../store";
 
 function JasonLogo() {
@@ -29,6 +29,47 @@ export function MenuBar({ appName, onAbout, onToggleControl }: Props) {
 
   const fmtTime = time.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
+  const menus: Record<string, { label: string; onClick: () => void }[]> = {
+    File: [
+      { label: "New Window", onClick: () => window.open(window.location.href, "_blank") },
+      { label: "Close All Windows", onClick: () => window.dispatchEvent(new CustomEvent("jason-close-all")) },
+    ],
+    Edit: [
+      { label: "Copy", onClick: () => document.execCommand("copy") },
+      { label: "Paste", onClick: () => document.execCommand("paste") },
+      { label: "Select All", onClick: () => document.execCommand("selectAll") },
+    ],
+    View: [
+      { label: "Toggle Fullscreen", onClick: () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() },
+      { label: "Reload", onClick: () => window.location.reload() },
+    ],
+    Window: [
+      { label: "Minimize All", onClick: () => window.dispatchEvent(new CustomEvent("jason-close-all")) },
+    ],
+    Help: [
+      { label: "About JASON OS", onClick: onAbout },
+    ],
+  };
+
+  function renderMenu(name: string) {
+    const items = menus[name];
+    return (
+      <div key={name} className="relative">
+        <button
+          onClick={() => setOpenMenu(openMenu === name ? null : name)}
+          className="px-2 py-0.5 hover:bg-white/20 rounded"
+        >{name}</button>
+        {openMenu === name && (
+          <div className="absolute top-7 left-0 glass-strong rounded-lg p-1 min-w-[180px] shadow-xl animate-fade-up z-50">
+            {items.map(it => (
+              <button key={it.label} onClick={() => { it.onClick(); setOpenMenu(null); }} className="w-full text-left px-3 py-1.5 hover:bg-white/20 rounded text-xs">{it.label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="fixed top-0 inset-x-0 h-7 liquid-glass z-50 flex items-center px-3 text-xs os-text rounded-none">
       <div className="relative">
@@ -44,7 +85,9 @@ export function MenuBar({ appName, onAbout, onToggleControl }: Props) {
         )}
       </div>
       <span className="ml-2 font-semibold">{appName}</span>
-      <span className="ml-3 os-text-muted">File  Edit  View  Window  Help</span>
+      <div className="ml-3 flex items-center gap-1 os-text-muted">
+        {Object.keys(menus).map(renderMenu)}
+      </div>
       <div className="flex-1" />
       <button onClick={onToggleControl} className="px-2 py-0.5 hover:bg-white/20 rounded flex items-center gap-2">
         <Wifi className="w-3.5 h-3.5" />

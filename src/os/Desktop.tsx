@@ -18,17 +18,7 @@ const PHRASES = [
   "Jamango",
   "Ja makin me dinner mom?",
   "Leo",
-  "skibidi sigma",
-  "Ja-son of a gun",
-  "iykyk",
-  "ratio + L + bozo",
-  "Leo",
-  "certified yapper",
-  "no cap fr fr",
-  "Mom said it's my turn on the OS",
-  "Leo",
-  "vibe check passed",
-  "404: chill not found",
+  "Jason is Tuff",
 ];
 
 interface OpenWin {
@@ -108,6 +98,12 @@ export function Desktop() {
   function close(id: string) {
     setWins(w => w.filter(x => x.id !== id));
   }
+
+  useEffect(() => {
+    const handler = () => setWins([]);
+    window.addEventListener("jason-close-all", handler);
+    return () => window.removeEventListener("jason-close-all", handler);
+  }, []);
 
   const wp = wallpapers[os.state.theme];
   const topWin = [...wins].sort((a, b) => b.z - a.z)[0];
