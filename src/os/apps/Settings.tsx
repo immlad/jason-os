@@ -1,12 +1,38 @@
+import { useRef } from "react";
 import { useOS } from "../store";
 import { themeLabels, wallpapers } from "../themes";
 import type { ThemeName } from "../types";
 
 export function Settings() {
   const os = useOS();
+  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const wpRef = useRef<HTMLInputElement>(null);
+  const fontRef = useRef<HTMLInputElement>(null);
   const themes: ThemeName[] = ["cloud", "night", "forest", "jason"];
   if (os.state.sebastianUnlocked) themes.push("sebastian");
   if (os.state.leoUnlocked) themes.push("leo");
+  if (os.state.jasonCatUnlocked) themes.push("jasoncat");
+
+  function readFile(file: File): Promise<string> {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result as string);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+  }
+
+  function openBlank() {
+    const w = window.open("about:blank", "_blank");
+    if (!w) return;
+    w.document.title = "JASON OS";
+    w.location.href = window.location.href;
+  }
+  function openBlob() {
+    const html = `<!doctype html><meta charset=utf-8><title>JASON OS</title><style>html,body,iframe{margin:0;padding:0;border:0;width:100%;height:100%}</style><iframe src="${window.location.href}" allow="fullscreen"></iframe>`;
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    window.open(url, "_blank");
+  }
 
   return (
     <div className="p-8 space-y-8 rounded-3xl">
@@ -29,6 +55,52 @@ export function Settings() {
               </div>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold os-text-muted mb-3 uppercase tracking-wide">Personalization</h2>
+        <div className="glass rounded-3xl p-5 space-y-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div className="text-sm font-medium">Custom Wallpaper</div>
+              <div className="text-xs os-text-muted">Overrides the theme wallpaper for your account</div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => wpRef.current?.click()} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-xs">Upload</button>
+              {me?.customWallpaper && (
+                <button onClick={() => os.setCustomWallpaper(null)} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-xs">Remove</button>
+              )}
+              <input ref={wpRef} type="file" accept="image/*" hidden onChange={async e => {
+                const f = e.target.files?.[0]; if (!f) return;
+                os.setCustomWallpaper(await readFile(f));
+              }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div className="text-sm font-medium">Custom Font</div>
+              <div className="text-xs os-text-muted">{me?.customFont ? `Active: ${me.customFont.name}` : ".ttf, .otf, .woff, .woff2"}</div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => fontRef.current?.click()} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-xs">Upload</button>
+              {me?.customFont && (
+                <button onClick={() => os.setCustomFont(null)} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-xs">Remove</button>
+              )}
+              <input ref={fontRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" hidden onChange={async e => {
+                const f = e.target.files?.[0]; if (!f) return;
+                os.setCustomFont({ name: f.name, dataUrl: await readFile(f) });
+              }} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-semibold os-text-muted mb-3 uppercase tracking-wide">Open JASON OS</h2>
+        <div className="glass rounded-3xl p-5 flex gap-3 flex-wrap">
+          <button onClick={openBlank} className="px-4 py-2 rounded-2xl os-accent-bg text-white text-sm">Open in about:blank</button>
+          <button onClick={openBlob} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-sm">Open in blob:</button>
         </div>
       </section>
 

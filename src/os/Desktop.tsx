@@ -20,6 +20,7 @@ const PHRASES = [
   "Leo",
   "Jason is Tuff",
 ];
+const JASON_CAT_PHRASE = "Jason";
 
 interface OpenWin {
   id: string;
@@ -34,24 +35,50 @@ export function Desktop() {
   const [zCounter, setZCounter] = useState(10);
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [leoClicks, setLeoClicks] = useState(0);
+  const [jasonClicks, setJasonClicks] = useState(0);
   const [showCC, setShowCC] = useState(false);
   const [activeTroll, setActiveTroll] = useState<string | null>(null);
   const [seenGlobal, setSeenGlobal] = useState<string[]>([]);
   const [activeGlobal, setActiveGlobal] = useState<{ from: string; text: string } | null>(null);
 
+  const phrasePool = useMemo(() => {
+    const list = [...PHRASES];
+    if (os.state.sebastianUnlocked && os.state.leoUnlocked && !os.state.jasonCatUnlocked) {
+      list.push(JASON_CAT_PHRASE);
+    }
+    return list;
+  }, [os.state.sebastianUnlocked, os.state.leoUnlocked, os.state.jasonCatUnlocked]);
+
   // Phrase rotation - randomized
   useEffect(() => {
     const t = setInterval(() => {
-      setPhraseIdx(Math.floor(Math.random() * PHRASES.length));
+      setPhraseIdx(Math.floor(Math.random() * phrasePool.length));
     }, 4000);
     return () => clearInterval(t);
-  }, []);
+  }, [phrasePool.length]);
 
-  // Apply theme class
+  // Apply theme class + load user's saved theme on login
   useEffect(() => {
-    document.body.classList.remove("theme-cloud", "theme-night", "theme-forest", "theme-jason", "theme-sebastian", "theme-leo");
+    document.body.classList.remove("theme-cloud", "theme-night", "theme-forest", "theme-jason", "theme-sebastian", "theme-leo", "theme-jasoncat");
     document.body.classList.add(`theme-${os.state.theme}`);
   }, [os.state.theme]);
+
+  useEffect(() => {
+    if (me?.theme && me.theme !== os.state.theme) os.setTheme(me.theme);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.username]);
+
+  // Custom font
+  useEffect(() => {
+    const id = "jason-os-custom-font";
+    document.getElementById(id)?.remove();
+    if (me?.customFont) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = `@font-face{font-family:"JasonUserFont";src:url(${me.customFont.dataUrl});}body{font-family:"JasonUserFont",-apple-system,system-ui,sans-serif;}`;
+      document.head.appendChild(style);
+    }
+  }, [me?.customFont?.dataUrl]);
 
   // Troll detection
   useEffect(() => {
@@ -105,7 +132,7 @@ export function Desktop() {
     return () => window.removeEventListener("jason-close-all", handler);
   }, []);
 
-  const wp = wallpapers[os.state.theme];
+  const wp = me?.customWallpaper || wallpapers[os.state.theme];
   const topWin = [...wins].sort((a, b) => b.z - a.z)[0];
   const topApp = topWin ? apps.find(a => a.id === topWin.appId) : null;
 
@@ -124,14 +151,20 @@ export function Desktop() {
           key={phraseIdx}
           className="liquid-chip rounded-full px-6 py-2.5 animate-fade-up pointer-events-auto cursor-default"
           onClick={() => {
-            if (PHRASES[phraseIdx] === "Leo" && !os.state.leoUnlocked) {
+            const cur = phrasePool[phraseIdx];
+            if (cur === "Leo" && !os.state.leoUnlocked) {
               const n = leoClicks + 1;
               setLeoClicks(n);
               if (n >= 10) os.unlockLeo();
             }
+            if (cur === JASON_CAT_PHRASE && os.state.sebastianUnlocked && os.state.leoUnlocked && !os.state.jasonCatUnlocked) {
+              const n = jasonClicks + 1;
+              setJasonClicks(n);
+              if (n >= 10) os.unlockJasonCat();
+            }
           }}
         >
-          <p className="text-xl md:text-2xl font-semibold liquid-text tracking-wide">{PHRASES[phraseIdx]}</p>
+          <p className="text-xl md:text-2xl font-semibold liquid-text tracking-wide">{phrasePool[phraseIdx]}</p>
         </div>
       </div>
 
