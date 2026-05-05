@@ -1,4 +1,4 @@
-export type ThemeName = "cloud" | "night" | "forest" | "jason" | "sebastian";
+export type ThemeName = "cloud" | "night" | "forest" | "jason" | "sebastian" | "leo";
 
 export interface User {
   username: string;
@@ -26,6 +26,7 @@ export interface OSState {
   currentUser: string | null;
   theme: ThemeName;
   sebastianUnlocked: boolean;
+  leoUnlocked: boolean;
   globalMessages: GlobalMessage[];
   trollEvents: TrollEvent[];
   dockSide: "bottom" | "left" | "right" | "top";

@@ -1,9 +1,9 @@
-export function LiquidAura() {
+export function Chat() {
   return (
     <iframe
       src="https://immlad.github.io/liquid-aura/"
       className="w-full h-full border-0"
-      title="Liquid Aura"
+      title="Chat"
     />
   );
 }

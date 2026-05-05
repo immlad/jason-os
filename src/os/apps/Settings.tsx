@@ -6,6 +6,7 @@ export function Settings() {
   const os = useOS();
   const themes: ThemeName[] = ["cloud", "night", "forest", "jason"];
   if (os.state.sebastianUnlocked) themes.push("sebastian");
+  if (os.state.leoUnlocked) themes.push("leo");
 
   return (
     <div className="p-8 space-y-8 rounded-3xl">
@@ -56,7 +57,6 @@ export function Settings() {
               ))}
             </div>
           </div>
-          <p className="text-[11px] os-text-muted">Tip: drag dock icons to reorder. Double-click & drag the dock background to move it to any edge.</p>
         </div>
       </section>
 
