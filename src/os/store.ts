@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { OSState, ThemeName, User, GlobalMessage, TrollEvent, WebApp } from "./types";
 
 const KEY = "jason-os-state-v2";
+const LAST_USER_KEY = "jason-os-last-user";
 const CHANNEL = "jason-os-sync";
 const bc: BroadcastChannel | null = typeof window !== "undefined" && "BroadcastChannel" in window
   ? new BroadcastChannel(CHANNEL)
@@ -86,15 +87,32 @@ export function useOS() {
     signup(username: string, password: string): { ok: boolean; error?: string } {
       const u = username.trim();
       if (!u || !password) return { ok: false, error: "Username and password required" };
+      // Re-read from localStorage to defeat any stale in-memory state across tabs
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          const fresh = JSON.parse(raw);
+          if (Array.isArray(fresh.users)) state = { ...state, users: fresh.users };
+        }
+      } catch {}
       if (state.users.find((x) => x.username.toLowerCase() === u.toLowerCase()))
         return { ok: false, error: "Username already taken" };
       const isAdmin = ["jason", "minh"].includes(u.toLowerCase());
       const user: User = { username: u, password, isAdmin };
       state = { ...state, users: [...state.users, user], currentUser: u };
+      try { localStorage.setItem(LAST_USER_KEY, u); } catch {}
       persist();
       return { ok: true };
     },
     login(username: string, password: string): { ok: boolean; error?: string } {
+      // Re-read users so a freshly-signed-up account in another tab is visible
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          const fresh = JSON.parse(raw);
+          if (Array.isArray(fresh.users)) state = { ...state, users: fresh.users };
+        }
+      } catch {}
       const user = state.users.find(
         (x) => x.username.toLowerCase() === username.trim().toLowerCase()
       );
@@ -102,6 +120,7 @@ export function useOS() {
       if (user.banned) return { ok: false, error: "You have been banned" };
       if (user.password !== password) return { ok: false, error: "Wrong password" };
       state = { ...state, currentUser: user.username };
+      try { localStorage.setItem(LAST_USER_KEY, user.username); } catch {}
       persist();
       return { ok: true };
     },
