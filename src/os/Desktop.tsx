@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow } from "lucide-react";
 import { useOS } from "./store";
 import { wallpapers } from "./themes";
 import { Window } from "./components/Window";
@@ -7,10 +7,13 @@ import { Dock, DockItem } from "./components/Dock";
 import { MenuBar } from "./components/MenuBar";
 import { ControlCenter } from "./components/ControlCenter";
 import { DesktopIcons } from "./components/DesktopIcons";
+import { ContextMenu, MenuEntry } from "./components/ContextMenu";
 import { About } from "./apps/About";
 import { Settings } from "./apps/Settings";
 import { Chat, Nebulo } from "./apps/LiquidAura";
 import { AdminPanel } from "./apps/AdminPanel";
+import { WebAppCreator } from "./apps/WebAppCreator";
+import { WebFrame } from "./apps/WebFrame";
 
 const PHRASES = [
   "I AM ICEMAN",
@@ -40,6 +43,12 @@ export function Desktop() {
   const [activeTroll, setActiveTroll] = useState<string | null>(null);
   const [seenGlobal, setSeenGlobal] = useState<string[]>([]);
   const [activeGlobal, setActiveGlobal] = useState<{ from: string; text: string } | null>(null);
+  const [ctx, setCtx] = useState<{ x: number; y: number; items: MenuEntry[] } | null>(null);
+  const [konami, setKonami] = useState<string[]>([]);
+  const [typed, setTyped] = useState("");
+  const [eggMsg, setEggMsg] = useState<string | null>(null);
+  const [matrix, setMatrix] = useState(false);
+  const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
 
   const phrasePool = useMemo(() => {
     const list = [...PHRASES];
@@ -93,9 +102,56 @@ export function Desktop() {
     if (last && !seenGlobal.includes(last.id)) {
       setSeenGlobal(s => [...s, last.id]);
       setActiveGlobal({ from: last.from, text: last.text });
-      setTimeout(() => setActiveGlobal(null), 5000);
+      setTimeout(() => setActiveGlobal(null), 6000);
     }
   }, [os.state.globalMessages, seenGlobal]);
+
+  // Easter eggs: Konami + typed words
+  useEffect(() => {
+    const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+    function onKey(e: KeyboardEvent) {
+      // Konami
+      const next = [...konami, e.key].slice(-KONAMI.length);
+      setKonami(next);
+      if (next.join(",").toLowerCase() === KONAMI.join(",").toLowerCase()) {
+        setMatrix(true);
+        setEggMsg("🎮 KONAMI CODE — Matrix mode!");
+        setTimeout(() => setEggMsg(null), 3000);
+        setTimeout(() => setMatrix(false), 8000);
+      }
+      // typed words
+      if (e.key.length === 1) {
+        const t = (typed + e.key.toLowerCase()).slice(-20);
+        setTyped(t);
+        if (t.endsWith("jason")) { setEggMsg("👑 JASON!"); setTimeout(() => setEggMsg(null), 2000); }
+        if (t.endsWith("rosebud")) { os.unlockSebastian(); setEggMsg("🌹 Sebastian unlocked"); setTimeout(() => setEggMsg(null), 2500); }
+        if (t.endsWith("leothelegend")) { os.unlockLeo(); setEggMsg("🦁 Leo unlocked"); setTimeout(() => setEggMsg(null), 2500); }
+        if (t.endsWith("meow")) { setEggMsg("🐱 meow"); setTimeout(() => setEggMsg(null), 1500); }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [konami, typed, os]);
+
+  // Corner clicks easter egg
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      const w = window.innerWidth, h = window.innerHeight, m = 40;
+      const c = cornerHits.current;
+      if (e.clientX < m && e.clientY < m) c.tl++;
+      else if (e.clientX > w - m && e.clientY < m) c.tr++;
+      else if (e.clientX < m && e.clientY > h - m) c.bl++;
+      else if (e.clientX > w - m && e.clientY > h - m) c.br++;
+      if (c.tl + c.tr + c.bl + c.br >= 12 && c.tl && c.tr && c.bl && c.br) {
+        cornerHits.current = { tl: 0, tr: 0, bl: 0, br: 0 };
+        setEggMsg("✨ Four corners — secret unlocked");
+        os.unlockLeo();
+        setTimeout(() => setEggMsg(null), 2500);
+      }
+    }
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [os]);
 
   const apps = useMemo(() => {
     const list: (DockItem & { title: string; render: () => JSX.Element; size?: { w: number; h: number } })[] = [
@@ -103,12 +159,22 @@ export function Desktop() {
       { id: "settings", name: "Settings", title: "Settings", Icon: SettingsIcon, color: "#888", render: () => <Settings /> },
       { id: "chat", name: "Chat", title: "Chat", Icon: Sparkles, color: "#7c3aed", render: () => <Chat />, size: { w: 900, h: 600 } },
       { id: "nebulo", name: "Nebulo", title: "Nebulo", Icon: GraduationCap, color: "#10b981", render: () => <Nebulo />, size: { w: 1000, h: 640 } },
+      { id: "webcreator", name: "Web Apps", title: "Web App Creator", Icon: AppWindow, color: "#f59e0b", render: () => <WebAppCreator />, size: { w: 720, h: 600 } },
     ];
     if (me?.isAdmin) {
       list.push({ id: "admin", name: "Admin", title: "Admin Panel", Icon: Shield, color: "#ef4444", render: () => <AdminPanel /> });
     }
+    // user-added webapps
+    for (const w of (me?.webApps || [])) {
+      list.push({
+        id: w.id, name: w.name, title: w.name, Icon: Globe, color: w.color || "#5e9bf5",
+        iconImage: w.icon, isWebApp: true,
+        render: () => <WebFrame url={w.url} name={w.name} />,
+        size: { w: 1100, h: 720 },
+      } as any);
+    }
     return list;
-  }, [me?.isAdmin]);
+  }, [me?.isAdmin, me?.webApps]);
 
   function openApp(id: string) {
     setZCounter(z => z + 1);
@@ -136,11 +202,46 @@ export function Desktop() {
   const topWin = [...wins].sort((a, b) => b.z - a.z)[0];
   const topApp = topWin ? apps.find(a => a.id === topWin.appId) : null;
 
+  function showCtx(e: React.MouseEvent, items: MenuEntry[]) {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtx({ x: e.clientX, y: e.clientY, items });
+  }
+
+  const desktopMenu: MenuEntry[] = [
+    { label: "New Web App…", onClick: () => openApp("webcreator") },
+    { label: "Open Settings", onClick: () => openApp("settings") },
+    { separator: true, label: "" },
+    { label: "Toggle Fullscreen", onClick: async () => {
+        try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch {}
+    } },
+    { label: "Close All Windows", onClick: () => setWins([]) },
+    { separator: true, label: "" },
+    { label: "Reload", onClick: () => window.location.reload() },
+  ];
+
   return (
-    <div className="fixed inset-0 overflow-hidden select-none" style={{ backgroundImage: `url(${wp})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+    <div
+      className="fixed inset-0 overflow-hidden select-none"
+      style={{ backgroundImage: `url(${wp})`, backgroundSize: "cover", backgroundPosition: "center" }}
+      onContextMenu={(e) => showCtx(e, desktopMenu)}
+    >
       <MenuBar appName={topApp?.name || "Finder"} onAbout={() => openApp("about")} onToggleControl={() => setShowCC(v => !v)} />
 
-      <DesktopIcons items={apps} onOpen={openApp} />
+      <DesktopIcons
+        items={apps}
+        onOpen={openApp}
+        onContext={(e, app) => {
+          const isWeb = (app as any).isWebApp;
+          const pinned = (me?.pinnedApps || []).includes(app.id);
+          const items: MenuEntry[] = [
+            { label: "Open", onClick: () => openApp(app.id) },
+            { label: pinned ? "Unpin from Dock" : "Pin to Dock", onClick: () => pinned ? os.unpinApp(app.id) : os.pinApp(app.id) },
+          ];
+          if (isWeb) items.push({ separator: true, label: "" }, { label: "Remove Web App", danger: true, onClick: () => os.removeWebApp(app.id) });
+          showCtx(e as any, items);
+        }}
+      />
 
       {/* Big JASON OS title — liquid glass */}
       <div className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-5 pointer-events-none z-10 px-4">
@@ -188,7 +289,35 @@ export function Desktop() {
         );
       })}
 
-      <Dock items={apps} onOpen={openApp} openIds={wins.map(w => w.appId)} />
+      <Dock
+        items={apps}
+        onOpen={openApp}
+        openIds={wins.map(w => w.appId)}
+        onContext={(e, app) => {
+          const isWeb = (app as any).isWebApp;
+          const pinned = (me?.pinnedApps || []).includes(app.id);
+          const items: MenuEntry[] = [
+            { label: "Open", onClick: () => openApp(app.id) },
+            { label: pinned ? "Unpin from Dock" : "Keep in Dock", onClick: () => pinned ? os.unpinApp(app.id) : os.pinApp(app.id) },
+            { label: "Show All Windows", onClick: () => {} },
+          ];
+          if (isWeb) items.push({ separator: true, label: "" }, { label: "Remove Web App", danger: true, onClick: () => os.removeWebApp(app.id) });
+          showCtx(e as any, items);
+        }}
+      />
+
+      {ctx && <ContextMenu x={ctx.x} y={ctx.y} items={ctx.items} onClose={() => setCtx(null)} />}
+
+      {eggMsg && (
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 liquid-glass rounded-full px-5 py-2 z-[80] animate-fade-up text-sm font-medium os-text">
+          {eggMsg}
+        </div>
+      )}
+
+      {matrix && (
+        <div className="fixed inset-0 z-[90] pointer-events-none mix-blend-screen"
+             style={{ background: "repeating-linear-gradient(0deg, rgba(0,255,80,0.08) 0 2px, transparent 2px 4px)", animation: "phraseFade 1s linear infinite" }} />
+      )}
 
       {/* Global broadcast notification */}
       {activeGlobal && (
@@ -205,16 +334,51 @@ export function Desktop() {
       {activeTroll && (() => {
         const ev = os.state.trollEvents.find(t => t.id === activeTroll);
         if (!ev) return null;
-        return (
-          <div className="fixed inset-0 z-[100] bg-black/80 grid place-items-center animate-fade-up" onClick={() => { os.dismissTroll(ev.id); setActiveTroll(null); }}>
-            <div className="text-center">
-              <img src={ev.imageUrl} alt="trolled" className="max-w-[80vw] max-h-[70vh] rounded-2xl shadow-2xl mx-auto" />
-              <p className="mt-4 text-white text-2xl font-bold">YOU GOT TROLLED 😂</p>
-              <p className="text-white/70 text-sm mt-2">click anywhere to dismiss</p>
-            </div>
-          </div>
-        );
+        return <Jumpscare imageUrl={ev.imageUrl} onDismiss={() => { os.dismissTroll(ev.id); setActiveTroll(null); }} />;
       })()}
+    </div>
+  );
+}
+
+function Jumpscare({ imageUrl, onDismiss }: { imageUrl: string; onDismiss: () => void }) {
+  const [phase, setPhase] = useState<"flash" | "scare" | "calm">("flash");
+  useEffect(() => {
+    // play screech
+    try {
+      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const ac = new Ctx();
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(120, ac.currentTime);
+      o.frequency.exponentialRampToValueAtTime(1800, ac.currentTime + 0.4);
+      o.frequency.exponentialRampToValueAtTime(80, ac.currentTime + 1.6);
+      g.gain.setValueAtTime(0.0001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.6, ac.currentTime + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.8);
+      o.connect(g).connect(ac.destination);
+      o.start();
+      o.stop(ac.currentTime + 1.8);
+      // vibration
+      if (navigator.vibrate) navigator.vibrate([200, 80, 400, 80, 600]);
+    } catch {}
+    const t1 = setTimeout(() => setPhase("scare"), 120);
+    const t2 = setTimeout(() => setPhase("calm"), 2200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+  return (
+    <div className="fixed inset-0 z-[200] grid place-items-center cursor-pointer" onClick={onDismiss}>
+      <div className="absolute inset-0" style={{
+        background: phase === "flash" ? "white" : "black",
+        animation: phase === "scare" ? "phraseFade 0.18s linear infinite" : undefined,
+      }} />
+      {phase !== "flash" && (
+        <div className="relative text-center" style={{ animation: phase === "scare" ? "scareShake 0.08s linear infinite" : undefined }}>
+          <img src={imageUrl} alt="" className="max-w-[92vw] max-h-[78vh] mx-auto" style={{ filter: phase === "scare" ? "contrast(1.5) saturate(1.5)" : "none" }} />
+          <p className="mt-3 text-red-500 text-3xl md:text-5xl font-black tracking-widest" style={{ textShadow: "0 0 24px red, 0 0 8px white" }}>BOO!</p>
+          {phase === "calm" && <p className="text-white/70 text-xs mt-2">click anywhere to dismiss</p>}
+        </div>
+      )}
     </div>
   );
 }

@@ -8,27 +8,36 @@ export interface DockItem {
   name: string;
   Icon: LucideIcon;
   color: string;
+  iconImage?: string;
+  isWebApp?: boolean;
 }
 
 interface Props {
   items: DockItem[];
   onOpen: (id: string) => void;
   openIds: string[];
+  onContext?: (e: React.MouseEvent, app: DockItem) => void;
 }
 
-export function Dock({ items, onOpen, openIds }: Props) {
+export function Dock({ items, onOpen, openIds, onContext }: Props) {
   const os = useOS();
   const overrideImg = themeIconOverride(os.state.theme);
+  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const pinned = new Set(me?.pinnedApps || []);
+  // include only built-ins + pinned + open
+  const visibleItems = items.filter(i =>
+    !i.isWebApp || pinned.has(i.id) || openIds.includes(i.id)
+  );
   const side = os.state.dockSide;
   const shape = os.state.dockShape;
   const isVertical = side === "left" || side === "right";
 
   // Order
   const order = os.state.dockOrder.length
-    ? [...os.state.dockOrder.filter(id => items.find(i => i.id === id)),
-       ...items.filter(i => !os.state.dockOrder.includes(i.id)).map(i => i.id)]
-    : items.map(i => i.id);
-  const ordered = order.map(id => items.find(i => i.id === id)!).filter(Boolean);
+    ? [...os.state.dockOrder.filter(id => visibleItems.find(i => i.id === id)),
+       ...visibleItems.filter(i => !os.state.dockOrder.includes(i.id)).map(i => i.id)]
+    : visibleItems.map(i => i.id);
+  const ordered = order.map(id => visibleItems.find(i => i.id === id)!).filter(Boolean);
 
   // Magnification
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
@@ -116,6 +125,7 @@ export function Dock({ items, onOpen, openIds }: Props) {
                 onDragEnd={() => { setDragId(null); setOverId(null); }}
                 onMouseEnter={() => setHoverIdx(i)}
                 onClick={() => onOpen(it.id)}
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onContext?.(e, it); }}
                 className={`group relative w-16 h-16 ${iconRadius} grid place-items-center transition-all duration-200 ease-out ${isOver ? "ring-2 ring-white/60" : ""}`}
                 style={{
                   background: `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
@@ -125,7 +135,9 @@ export function Dock({ items, onOpen, openIds }: Props) {
                 }}
                 aria-label={it.name}
               >
-                {overrideImg ? (
+                {it.iconImage ? (
+                  <img src={it.iconImage} alt={it.name} className={`w-full h-full ${iconRadius} object-cover`} style={{ aspectRatio: "1 / 1" }} />
+                ) : overrideImg ? (
                   <img src={overrideImg} alt={it.name} className={`w-full h-full ${iconRadius} object-cover`} style={{ aspectRatio: "1 / 1" }} />
                 ) : (
                   <it.Icon className="w-7 h-7 text-white drop-shadow" />
