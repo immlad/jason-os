@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import type { OSState, ThemeName, User, GlobalMessage, TrollEvent, WebApp } from "./types";
 
 const KEY = "jason-os-state-v2";
+const CHANNEL = "jason-os-sync";
+const bc: BroadcastChannel | null = typeof window !== "undefined" && "BroadcastChannel" in window
+  ? new BroadcastChannel(CHANNEL)
+  : null;
 
 const defaultState: OSState = {
   users: [],
@@ -34,6 +38,8 @@ const listeners = new Set<() => void>();
 function persist() {
   localStorage.setItem(KEY, JSON.stringify(state));
   listeners.forEach((l) => l());
+  // Push to other tabs/windows instantly (storage event alone is not always reliable)
+  try { bc?.postMessage({ type: "state", state }); } catch {}
 }
 
 // cross-tab sync
@@ -46,6 +52,24 @@ if (typeof window !== "undefined") {
       } catch {}
     }
   });
+  bc?.addEventListener("message", (e) => {
+    if (e.data?.type === "state" && e.data.state) {
+      state = { ...defaultState, ...e.data.state };
+      listeners.forEach((l) => l());
+    }
+  });
+  // Polling fallback (covers private mode / restricted contexts)
+  setInterval(() => {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return;
+      const next = JSON.parse(raw);
+      if (JSON.stringify(next) !== JSON.stringify(state)) {
+        state = { ...defaultState, ...next };
+        listeners.forEach((l) => l());
+      }
+    } catch {}
+  }, 1500);
 }
 
 export function useOS() {
