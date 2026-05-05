@@ -5,7 +5,9 @@ import { jasonImg } from "../themes";
 export function Boot() {
   const os = useOS();
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => {
+    try { return localStorage.getItem("jason-os-last-user") || ""; } catch { return ""; }
+  });
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
