@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { useOS } from "../store";
-import { jasonImg, sebastianImg } from "../themes";
+import { jasonImg } from "../themes";
 
 export function About() {
   const os = useOS();
   const [clicks, setClicks] = useState(0);
-  const [showSecret, setShowSecret] = useState(false);
 
   function handleClick() {
     const next = clicks + 1;
     setClicks(next);
     if (next >= 15 && !os.state.sebastianUnlocked) {
       os.unlockSebastian();
-      setShowSecret(true);
     }
   }
 
@@ -35,22 +33,7 @@ export function About() {
         <div className="flex justify-between border-b pb-1" style={{ borderColor: "hsl(var(--os-border))" }}>
           <span className="os-text-muted">Chip</span><span>JASON M9 Pro Max Ultra</span>
         </div>
-        <div className="flex justify-between">
-          <span className="os-text-muted">Easter egg</span><span>{clicks}/15</span>
-        </div>
       </div>
-      {os.state.sebastianUnlocked && (
-        <div className="glass rounded-xl p-4 flex items-center gap-4">
-          <img src={sebastianImg} alt="Sebastian" className="w-16 h-16 rounded-xl object-cover" />
-          <div>
-            <div className="font-semibold">Sebastian Theme Unlocked 🎻</div>
-            <div className="text-xs os-text-muted">Available in Settings</div>
-          </div>
-        </div>
-      )}
-      {showSecret && (
-        <div className="text-xs os-text-muted">🎉 Secret theme unlocked!</div>
-      )}
     </div>
   );
 }

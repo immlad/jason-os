@@ -68,9 +68,8 @@ export function Dock({ items, onOpen, openIds }: Props) {
   function scaleFor(i: number) {
     if (hoverIdx === null) return 1;
     const d = Math.abs(i - hoverIdx);
-    if (d === 0) return 1.6;
-    if (d === 1) return 1.32;
-    if (d === 2) return 1.14;
+    if (d === 0) return 1.18;
+    if (d === 1) return 1.08;
     return 1;
   }
 
@@ -120,9 +119,9 @@ export function Dock({ items, onOpen, openIds }: Props) {
                 className={`group relative w-16 h-16 ${iconRadius} grid place-items-center transition-all duration-200 ease-out ${isOver ? "ring-2 ring-white/60" : ""}`}
                 style={{
                   background: overrideImg ? "transparent" : `linear-gradient(135deg, ${it.color}, ${it.color}cc)`,
-                  transform: `scale(${scale}) ${isVertical ? `translateX(${(scale - 1) * 14}px)` : `translateY(${-(scale - 1) * 14}px)`}`,
-                  transformOrigin: side,
-                  boxShadow: scale > 1 ? "0 12px 30px rgba(0,0,0,0.35)" : "0 4px 12px rgba(0,0,0,0.2)",
+                  transform: `scale(${scale})`,
+                  transformOrigin: "center",
+                  boxShadow: scale > 1 ? "0 8px 18px rgba(0,0,0,0.3)" : "0 4px 12px rgba(0,0,0,0.2)",
                 }}
                 aria-label={it.name}
               >
