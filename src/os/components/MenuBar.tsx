@@ -40,7 +40,12 @@ export function MenuBar({ appName, onAbout, onToggleControl }: Props) {
       { label: "Select All", onClick: () => document.execCommand("selectAll") },
     ],
     View: [
-      { label: "Toggle Fullscreen", onClick: () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() },
+      { label: "Toggle Fullscreen", onClick: async () => {
+          try {
+            if (document.fullscreenElement) await document.exitFullscreen();
+            else await document.documentElement.requestFullscreen();
+          } catch (e) { console.warn("Fullscreen failed:", e); }
+        } },
       { label: "Reload", onClick: () => window.location.reload() },
     ],
     Window: [

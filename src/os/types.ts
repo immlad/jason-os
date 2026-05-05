@@ -1,10 +1,13 @@
-export type ThemeName = "cloud" | "night" | "forest" | "jason" | "sebastian" | "leo";
+export type ThemeName = "cloud" | "night" | "forest" | "jason" | "sebastian" | "leo" | "jasoncat";
 
 export interface User {
   username: string;
   password: string;
   isAdmin: boolean;
   banned?: boolean;
+  theme?: ThemeName;
+  customWallpaper?: string; // data URL
+  customFont?: { name: string; dataUrl: string };
 }
 
 export interface GlobalMessage {
@@ -27,6 +30,7 @@ export interface OSState {
   theme: ThemeName;
   sebastianUnlocked: boolean;
   leoUnlocked: boolean;
+  jasonCatUnlocked: boolean;
   globalMessages: GlobalMessage[];
   trollEvents: TrollEvent[];
   dockSide: "bottom" | "left" | "right" | "top";
