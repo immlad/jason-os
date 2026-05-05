@@ -8,6 +8,7 @@ const defaultState: OSState = {
   currentUser: null,
   theme: "cloud",
   sebastianUnlocked: false,
+  leoUnlocked: false,
   globalMessages: [],
   trollEvents: [],
   dockSide: "bottom",
@@ -105,6 +106,10 @@ export function useOS() {
     },
     unlockSebastian() {
       state = { ...state, sebastianUnlocked: true };
+      persist();
+    },
+    unlockLeo() {
+      state = { ...state, leoUnlocked: true };
       persist();
     },
     sendGlobal(text: string) {
