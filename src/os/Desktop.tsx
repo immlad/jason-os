@@ -333,7 +333,7 @@ export function Desktop() {
       {activeTroll && (() => {
         const ev = os.state.trollEvents.find(t => t.id === activeTroll);
         if (!ev) return null;
-        return <Jumpscare imageUrl={ev.imageUrl || scareImg} onDismiss={() => { os.dismissTroll(ev.id); setActiveTroll(null); }} />;
+        return <Jumpscare imageUrl={me?.customJumpscare || ev.imageUrl || scareImg} onDismiss={() => { os.dismissTroll(ev.id); setActiveTroll(null); }} />;
       })()}
     </div>
   );

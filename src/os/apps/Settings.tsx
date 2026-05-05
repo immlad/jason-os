@@ -8,6 +8,7 @@ export function Settings() {
   const me = os.state.users.find(u => u.username === os.state.currentUser);
   const wpRef = useRef<HTMLInputElement>(null);
   const fontRef = useRef<HTMLInputElement>(null);
+  const scareRef = useRef<HTMLInputElement>(null);
   const themes: ThemeName[] = ["cloud", "night", "forest", "jason"];
   if (os.state.sebastianUnlocked) themes.push("sebastian");
   if (os.state.leoUnlocked) themes.push("leo");
@@ -90,6 +91,29 @@ export function Settings() {
               <input ref={fontRef} type="file" accept=".ttf,.otf,.woff,.woff2,font/*" hidden onChange={async e => {
                 const f = e.target.files?.[0]; if (!f) return;
                 os.setCustomFont({ name: f.name, dataUrl: await readFile(f) });
+              }} />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              {me?.customJumpscare ? (
+                <img src={me.customJumpscare} alt="jumpscare preview" className="w-14 h-14 rounded-xl object-cover border border-white/30" />
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-white/10 grid place-items-center text-lg">👻</div>
+              )}
+              <div>
+                <div className="text-sm font-medium">Custom Jumpscare</div>
+                <div className="text-xs os-text-muted">{me?.customJumpscare ? "Active — used by the scare overlay" : "Upload an image to replace the default scare"}</div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => scareRef.current?.click()} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-xs">Upload</button>
+              {me?.customJumpscare && (
+                <button onClick={() => os.setCustomJumpscare(null)} className="px-4 py-2 rounded-2xl bg-white/10 hover:bg-white/20 text-xs">Remove</button>
+              )}
+              <input ref={scareRef} type="file" accept="image/*" hidden onChange={async e => {
+                const f = e.target.files?.[0]; if (!f) return;
+                os.setCustomJumpscare(await readFile(f));
               }} />
             </div>
           </div>
