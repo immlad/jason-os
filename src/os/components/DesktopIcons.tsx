@@ -53,10 +53,10 @@ function Icon({ item, pos, onOpen, overrideImg }: { item: DockItem & { title: st
     >
       <div
         className="w-14 h-14 rounded-[18px] grid place-items-center shadow-lg group-hover:scale-105 transition-transform liquid-glass"
-        style={{ background: overrideImg ? "transparent" : `linear-gradient(135deg, ${item.color}, ${item.color}cc)` }}
+        style={{ background: `linear-gradient(135deg, ${item.color}, ${item.color}cc)`, overflow: "hidden" }}
       >
         {overrideImg ? (
-          <img src={overrideImg} alt={item.name} className="w-full h-full rounded-[18px] object-cover" />
+          <img src={overrideImg} alt={item.name} className="w-full h-full rounded-[18px] object-cover" style={{ aspectRatio: "1 / 1" }} />
         ) : (
           <item.Icon className="w-7 h-7 text-white drop-shadow" />
         )}
