@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { OSState, ThemeName, User, GlobalMessage, TrollEvent } from "./types";
+import type { OSState, ThemeName, User, GlobalMessage, TrollEvent, WebApp } from "./types";
 
 const KEY = "jason-os-state-v2";
 
@@ -132,6 +132,40 @@ export function useOS() {
       state = {
         ...state,
         users: state.users.map(u => u.username === state.currentUser ? { ...u, customFont: font || undefined } : u),
+      };
+      persist();
+    },
+    addWebApp(app: Omit<WebApp, "id">) {
+      const wa: WebApp = { ...app, id: `web-${crypto.randomUUID()}` };
+      state = {
+        ...state,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, webApps: [...(u.webApps || []), wa] } : u),
+      };
+      persist();
+    },
+    removeWebApp(id: string) {
+      state = {
+        ...state,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, webApps: (u.webApps || []).filter(w => w.id !== id) } : u),
+      };
+      persist();
+    },
+    pinApp(id: string) {
+      state = {
+        ...state,
+        users: state.users.map(u => {
+          if (u.username !== state.currentUser) return u;
+          const cur = u.pinnedApps || [];
+          if (cur.includes(id)) return u;
+          return { ...u, pinnedApps: [...cur, id] };
+        }),
+      };
+      persist();
+    },
+    unpinApp(id: string) {
+      state = {
+        ...state,
+        users: state.users.map(u => u.username === state.currentUser ? { ...u, pinnedApps: (u.pinnedApps || []).filter(x => x !== id) } : u),
       };
       persist();
     },

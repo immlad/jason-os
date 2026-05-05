@@ -8,6 +8,16 @@ export interface User {
   theme?: ThemeName;
   customWallpaper?: string; // data URL
   customFont?: { name: string; dataUrl: string };
+  webApps?: WebApp[];
+  pinnedApps?: string[]; // app ids pinned to the dock
+}
+
+export interface WebApp {
+  id: string;
+  name: string;
+  url: string;
+  icon?: string; // data URL
+  color?: string;
 }
 
 export interface GlobalMessage {
