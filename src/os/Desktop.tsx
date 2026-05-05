@@ -14,6 +14,7 @@ import { Chat, Nebulo } from "./apps/LiquidAura";
 import { AdminPanel } from "./apps/AdminPanel";
 import { WebAppCreator } from "./apps/WebAppCreator";
 import { WebFrame } from "./apps/WebFrame";
+import scareImg from "@/assets/scare.jpg";
 
 const PHRASES = [
   "I AM ICEMAN",
@@ -245,12 +246,10 @@ export function Desktop() {
 
       {/* Big JASON OS title — liquid glass */}
       <div className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-5 pointer-events-none z-10 px-4">
-        <div className="liquid-glass rounded-[40px] px-10 py-6 inline-block">
-          <h1 className="text-6xl md:text-8xl font-black liquid-text tracking-tight">JASON OS</h1>
-        </div>
+        <h1 className="text-7xl md:text-9xl font-black liquid-text tracking-tight">JASON OS</h1>
         <div
           key={phraseIdx}
-          className="liquid-chip rounded-full px-6 py-2.5 animate-fade-up pointer-events-auto cursor-default"
+          className="animate-fade-up pointer-events-auto cursor-default"
           onClick={() => {
             const cur = phrasePool[phraseIdx];
             if (cur === "Leo" && !os.state.leoUnlocked) {
@@ -265,7 +264,7 @@ export function Desktop() {
             }
           }}
         >
-          <p className="text-xl md:text-2xl font-semibold liquid-text tracking-wide">{phrasePool[phraseIdx]}</p>
+          <p className="text-2xl md:text-3xl font-semibold liquid-text tracking-wide">{phrasePool[phraseIdx]}</p>
         </div>
       </div>
 
@@ -334,7 +333,7 @@ export function Desktop() {
       {activeTroll && (() => {
         const ev = os.state.trollEvents.find(t => t.id === activeTroll);
         if (!ev) return null;
-        return <Jumpscare imageUrl={ev.imageUrl} onDismiss={() => { os.dismissTroll(ev.id); setActiveTroll(null); }} />;
+        return <Jumpscare imageUrl={ev.imageUrl || scareImg} onDismiss={() => { os.dismissTroll(ev.id); setActiveTroll(null); }} />;
       })()}
     </div>
   );
@@ -347,35 +346,50 @@ function Jumpscare({ imageUrl, onDismiss }: { imageUrl: string; onDismiss: () =>
     try {
       const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
       const ac = new Ctx();
-      const o = ac.createOscillator();
-      const g = ac.createGain();
-      o.type = "sawtooth";
-      o.frequency.setValueAtTime(120, ac.currentTime);
-      o.frequency.exponentialRampToValueAtTime(1800, ac.currentTime + 0.4);
-      o.frequency.exponentialRampToValueAtTime(80, ac.currentTime + 1.6);
-      g.gain.setValueAtTime(0.0001, ac.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.6, ac.currentTime + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.8);
-      o.connect(g).connect(ac.destination);
-      o.start();
-      o.stop(ac.currentTime + 1.8);
-      // vibration
-      if (navigator.vibrate) navigator.vibrate([200, 80, 400, 80, 600]);
+      // Layered scream: dissonant oscillators + noise burst
+      const master = ac.createGain();
+      master.gain.value = 0.9;
+      master.connect(ac.destination);
+      [180, 260, 410, 720].forEach((f, i) => {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = i % 2 ? "square" : "sawtooth";
+        o.frequency.setValueAtTime(f, ac.currentTime);
+        o.frequency.exponentialRampToValueAtTime(f * 8, ac.currentTime + 0.5);
+        o.frequency.exponentialRampToValueAtTime(f * 0.6, ac.currentTime + 2.4);
+        g.gain.setValueAtTime(0.0001, ac.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.45, ac.currentTime + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 2.6);
+        o.connect(g).connect(master);
+        o.start();
+        o.stop(ac.currentTime + 2.6);
+      });
+      // White-noise burst
+      const buf = ac.createBuffer(1, ac.sampleRate * 1.2, ac.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const noise = ac.createBufferSource();
+      noise.buffer = buf;
+      const ng = ac.createGain();
+      ng.gain.value = 0.5;
+      noise.connect(ng).connect(master);
+      noise.start();
+      if (navigator.vibrate) navigator.vibrate([400, 60, 600, 60, 800, 60, 400]);
     } catch {}
-    const t1 = setTimeout(() => setPhase("scare"), 120);
-    const t2 = setTimeout(() => setPhase("calm"), 2200);
+    const t1 = setTimeout(() => setPhase("scare"), 100);
+    const t2 = setTimeout(() => setPhase("calm"), 3200);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
   return (
-    <div className="fixed inset-0 z-[200] grid place-items-center cursor-pointer" onClick={onDismiss}>
+    <div className="fixed inset-0 z-[9999] grid place-items-center cursor-pointer" onClick={onDismiss}>
       <div className="absolute inset-0" style={{
         background: phase === "flash" ? "white" : "black",
-        animation: phase === "scare" ? "phraseFade 0.18s linear infinite" : undefined,
+        animation: phase === "scare" ? "phraseFade 0.12s linear infinite" : undefined,
       }} />
       {phase !== "flash" && (
-        <div className="relative text-center" style={{ animation: phase === "scare" ? "scareShake 0.08s linear infinite" : undefined }}>
-          <img src={imageUrl} alt="" className="max-w-[92vw] max-h-[78vh] mx-auto" style={{ filter: phase === "scare" ? "contrast(1.5) saturate(1.5)" : "none" }} />
-          <p className="mt-3 text-red-500 text-3xl md:text-5xl font-black tracking-widest" style={{ textShadow: "0 0 24px red, 0 0 8px white" }}>BOO!</p>
+        <div className="relative text-center w-full h-full flex flex-col items-center justify-center" style={{ animation: phase === "scare" ? "scareShake 0.06s linear infinite" : undefined }}>
+          <img src={imageUrl} alt="" className="w-screen h-screen object-cover absolute inset-0" style={{ filter: phase === "scare" ? "contrast(1.6) saturate(1.6) brightness(1.1)" : "none" }} />
+          <p className="relative mt-3 text-red-600 text-5xl md:text-8xl font-black tracking-widest" style={{ textShadow: "0 0 32px red, 0 0 12px white, 0 0 60px black" }}>BOO!</p>
           {phase === "calm" && <p className="text-white/70 text-xs mt-2">click anywhere to dismiss</p>}
         </div>
       )}
