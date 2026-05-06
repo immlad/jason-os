@@ -13,7 +13,10 @@ const Index = () => {
     }
   }, [os.state.theme]);
 
-  return os.state.currentUser ? <Desktop /> : <Boot />;
+  if (os.state.loading) {
+    return <div className="fixed inset-0 grid place-items-center bg-black text-white/70 text-sm">Booting JASON OS…</div>;
+  }
+  return os.state.currentUserId ? <Desktop /> : <Boot />;
 };
 
 export default Index;
