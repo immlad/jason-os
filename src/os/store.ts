@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
-import type { OSState, ThemeName, User, GlobalMessage, TrollEvent, WebApp } from "./types";
-
-const KEY = "jason-os-state-v2";
-const LAST_USER_KEY = "jason-os-last-user";
-const CHANNEL = "jason-os-sync";
-const bc: BroadcastChannel | null =
-  typeof window !== "undefined" && "BroadcastChannel" in window
-    ? new BroadcastChannel(CHANNEL)
-    : null;
+import { supabase } from "@/integrations/supabase/client";
+import type { ThemeName, User, GlobalMessage, TrollEvent, WebApp, OSState, PresenceRow, ActivityRow } from "./types";
 
 const defaultState: OSState = {
   users: [],
   currentUser: null,
+  currentUserId: null,
   theme: "cloud",
   sebastianUnlocked: false,
   leoUnlocked: false,
@@ -22,383 +16,227 @@ const defaultState: OSState = {
   dockShape: "pill",
   dockOrder: [],
   desktopIcons: {},
-
-  // NEW LIVE SYSTEM
-  liveUsers: {}, // { username: timestamp }
-  activityFeed: [], // { user, type, detail, time }
+  liveUsers: {},
+  activityFeed: [],
+  loading: true,
 };
 
-function load(): OSState {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return defaultState;
-    return { ...defaultState, ...JSON.parse(raw) };
-  } catch {
-    return defaultState;
-  }
-}
-
-let state: OSState = load();
+let state: OSState = { ...defaultState };
 const listeners = new Set<() => void>();
+function emit() { listeners.forEach(l => l()); }
+function set(patch: Partial<OSState>) { state = { ...state, ...patch }; emit(); }
 
-function persist() {
-  localStorage.setItem(KEY, JSON.stringify(state));
-  listeners.forEach((l) => l());
-  try {
-    bc?.postMessage({ type: "state", state });
-  } catch {}
+function rowToUser(p: any, adminIds: Set<string>): User {
+  return {
+    id: p.id,
+    username: p.username,
+    isAdmin: adminIds.has(p.id),
+    banned: p.banned,
+    theme: p.theme as ThemeName,
+    customWallpaper: p.custom_wallpaper || undefined,
+    customFont: p.custom_font || undefined,
+    customJumpscare: p.custom_jumpscare || undefined,
+    webApps: p.web_apps || [],
+    pinnedApps: p.pinned_apps || [],
+  };
 }
 
-// cross-tab sync
-if (typeof window !== "undefined") {
-  window.addEventListener("storage", (e) => {
-    if (e.key === KEY && e.newValue) {
-      try {
-        state = { ...defaultState, ...JSON.parse(e.newValue) };
-        listeners.forEach((l) => l());
-      } catch {}
+let adminIds = new Set<string>();
+let profileRows: any[] = [];
+
+async function refreshProfiles() {
+  const [{ data: profiles }, { data: roles }] = await Promise.all([
+    supabase.from("profiles").select("*"),
+    supabase.from("user_roles").select("*"),
+  ]);
+  adminIds = new Set((roles || []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
+  profileRows = profiles || [];
+  const users = profileRows.map(p => rowToUser(p, adminIds));
+  const me = users.find(u => u.id === state.currentUserId);
+  set({
+    users,
+    theme: me?.theme || state.theme,
+    sebastianUnlocked: !!me && !!profileRows.find(p => p.id === me.id)?.sebastian_unlocked,
+    leoUnlocked: !!me && !!profileRows.find(p => p.id === me.id)?.leo_unlocked,
+    jasonCatUnlocked: !!me && !!profileRows.find(p => p.id === me.id)?.jasoncat_unlocked,
+    dockSide: me ? (profileRows.find(p => p.id === me.id)?.dock_side || "bottom") : state.dockSide,
+    dockShape: me ? (profileRows.find(p => p.id === me.id)?.dock_shape || "pill") : state.dockShape,
+    dockOrder: me ? (profileRows.find(p => p.id === me.id)?.dock_order || []) : state.dockOrder,
+    desktopIcons: me ? (profileRows.find(p => p.id === me.id)?.desktop_icons || {}) : state.desktopIcons,
+  });
+}
+
+async function refreshMessages() {
+  const { data } = await supabase.from("global_messages").select("*").order("created_at", { ascending: true }).limit(100);
+  set({ globalMessages: (data || []).map((m: any) => ({ id: m.id, from: m.from_user, text: m.text, ts: new Date(m.created_at).getTime() })) });
+}
+async function refreshTrolls() {
+  const { data } = await supabase.from("troll_events").select("*").eq("dismissed", false);
+  const me = state.currentUserId;
+  set({ trollEvents: (data || []).map((t: any) => ({ id: t.id, target: profileRows.find(p => p.id === t.target_id)?.username || "", targetId: t.target_id, imageUrl: t.image_url || "", ts: new Date(t.created_at).getTime() })) });
+}
+async function refreshPresence() {
+  const { data } = await supabase.from("presence").select("*");
+  const map: Record<string, PresenceRow> = {};
+  for (const p of data || []) {
+    map[p.username] = {
+      userId: p.user_id, username: p.username,
+      currentApp: p.current_app, route: p.route,
+      mouseX: p.mouse_x, mouseY: p.mouse_y,
+      viewportW: p.viewport_w, viewportH: p.viewport_h,
+      lastSeen: new Date(p.last_seen).getTime(),
+    };
+  }
+  set({ liveUsers: map });
+}
+async function refreshActivity() {
+  const { data } = await supabase.from("activity").select("*").order("created_at", { ascending: false }).limit(100);
+  set({ activityFeed: (data || []).map((a: any) => ({ id: a.id, userId: a.user_id, username: a.username, type: a.type, detail: a.detail, time: new Date(a.created_at).getTime() })) });
+}
+
+let initialized = false;
+async function init() {
+  if (initialized) return; initialized = true;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user) set({ currentUserId: session.user.id, currentUser: session.user.user_metadata?.username || session.user.email?.split("@")[0] || null });
+  supabase.auth.onAuthStateChange((_e, s) => {
+    if (s?.user) {
+      set({ currentUserId: s.user.id, currentUser: s.user.user_metadata?.username || s.user.email?.split("@")[0] || null });
+      setTimeout(loadAll, 0);
+    } else {
+      set({ currentUserId: null, currentUser: null });
     }
   });
+  await loadAll();
+  set({ loading: false });
 
-  bc?.addEventListener("message", (e) => {
-    if (e.data?.type === "state" && e.data.state) {
-      state = { ...defaultState, ...e.data.state };
-      listeners.forEach((l) => l());
-    }
-  });
+  // realtime
+  supabase.channel("os-profiles").on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, refreshProfiles).subscribe();
+  supabase.channel("os-roles").on("postgres_changes", { event: "*", schema: "public", table: "user_roles" }, refreshProfiles).subscribe();
+  supabase.channel("os-msgs").on("postgres_changes", { event: "*", schema: "public", table: "global_messages" }, refreshMessages).subscribe();
+  supabase.channel("os-trolls").on("postgres_changes", { event: "*", schema: "public", table: "troll_events" }, refreshTrolls).subscribe();
+  supabase.channel("os-presence").on("postgres_changes", { event: "*", schema: "public", table: "presence" }, refreshPresence).subscribe();
+  supabase.channel("os-activity").on("postgres_changes", { event: "*", schema: "public", table: "activity" }, refreshActivity).subscribe();
+}
+async function loadAll() {
+  await refreshProfiles();
+  await Promise.all([refreshMessages(), refreshTrolls(), refreshPresence(), refreshActivity()]);
+}
+if (typeof window !== "undefined") init();
 
-  // Poll fallback
-  setInterval(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return;
-      const next = JSON.parse(raw);
-      if (JSON.stringify(next) !== JSON.stringify(state)) {
-        state = { ...defaultState, ...next };
-        listeners.forEach((l) => l());
-      }
-    } catch {}
-  }, 1500);
+function emailFor(username: string) {
+  return `${username.trim().toLowerCase()}@jasonos.local`;
+}
+async function patchProfile(patch: Record<string, any>) {
+  if (!state.currentUserId) return;
+  await supabase.from("profiles").update(patch).eq("id", state.currentUserId);
+  await refreshProfiles();
+}
+async function logActivity(type: string, detail?: string) {
+  if (!state.currentUserId || !state.currentUser) return;
+  await supabase.from("activity").insert({ user_id: state.currentUserId, username: state.currentUser, type, detail: detail || null });
 }
 
 export function useOS() {
   const [, setTick] = useState(0);
-  useEffect(() => {
-    const l = () => setTick((t) => t + 1);
-    listeners.add(l);
-    return () => listeners.delete(l);
-  }, []);
+  useEffect(() => { const l = () => setTick(t => t + 1); listeners.add(l); return () => { listeners.delete(l); }; }, []);
 
   return {
     state,
-
-    // -------------------------
-    // AUTH
-    // -------------------------
-    signup(username: string, password: string) {
+    async signup(username: string, password: string) {
       const u = username.trim();
       if (!u || !password) return { ok: false, error: "Username and password required" };
-
-      try {
-        const raw = localStorage.getItem(KEY);
-        if (raw) {
-          const fresh = JSON.parse(raw);
-          if (Array.isArray(fresh.users)) state = { ...state, users: fresh.users };
-        }
-      } catch {}
-
-      if (state.users.find((x) => x.username.toLowerCase() === u.toLowerCase()))
-        return { ok: false, error: "Username already taken" };
-
-      const isAdmin = ["jason", "minh"].includes(u.toLowerCase());
-      const user: User = { username: u, password, isAdmin };
-
-      state = { ...state, users: [...state.users, user], currentUser: u };
-      try {
-        localStorage.setItem(LAST_USER_KEY, u);
-      } catch {}
-      persist();
+      const { data, error } = await supabase.auth.signUp({
+        email: emailFor(u), password,
+        options: { emailRedirectTo: `${window.location.origin}/`, data: { username: u } },
+      });
+      if (error) return { ok: false, error: error.message };
+      if (data.user) { set({ currentUserId: data.user.id, currentUser: u }); await loadAll(); }
       return { ok: true };
     },
-
-    login(username: string, password: string) {
-      try {
-        const raw = localStorage.getItem(KEY);
-        if (raw) {
-          const fresh = JSON.parse(raw);
-          if (Array.isArray(fresh.users)) state = { ...state, users: fresh.users };
-        }
-      } catch {}
-
-      const user = state.users.find(
-        (x) => x.username.toLowerCase() === username.trim().toLowerCase()
-      );
-      if (!user) return { ok: false, error: "User not found" };
-      if (user.banned) return { ok: false, error: "You have been banned" };
-      if (user.password !== password) return { ok: false, error: "Wrong password" };
-
-      state = { ...state, currentUser: user.username };
-      try {
-        localStorage.setItem(LAST_USER_KEY, user.username);
-      } catch {}
-      persist();
+    async login(username: string, password: string) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: emailFor(username), password });
+      if (error) return { ok: false, error: error.message.includes("Invalid") ? "Wrong username or password" : error.message };
+      if (data.user) { set({ currentUserId: data.user.id, currentUser: username.trim() }); await loadAll(); }
       return { ok: true };
     },
-
-    logout() {
-      state = { ...state, currentUser: null };
-      persist();
+    async logout() {
+      if (state.currentUserId) await supabase.from("presence").delete().eq("user_id", state.currentUserId);
+      await supabase.auth.signOut();
+      set({ currentUserId: null, currentUser: null });
     },
 
-    // -------------------------
-    // THEMES + SETTINGS
-    // -------------------------
-    setTheme(theme: ThemeName) {
-      state = {
-        ...state,
-        theme,
-        users: state.users.map((u) =>
-          u.username === state.currentUser ? { ...u, theme } : u
-        ),
-      };
-      persist();
+    setTheme(theme: ThemeName) { set({ theme }); patchProfile({ theme }); },
+    setDockSide(dockSide: any) { set({ dockSide }); patchProfile({ dock_side: dockSide }); },
+    setDockShape(dockShape: any) { set({ dockShape }); patchProfile({ dock_shape: dockShape }); },
+    setDockOrder(dockOrder: string[]) { set({ dockOrder }); patchProfile({ dock_order: dockOrder }); },
+    setDesktopIcon(id: string, pos: { x: number; y: number }) {
+      const next = { ...state.desktopIcons, [id]: pos };
+      set({ desktopIcons: next });
+      patchProfile({ desktop_icons: next });
+    },
+    unlockSebastian() { set({ sebastianUnlocked: true }); patchProfile({ sebastian_unlocked: true }); },
+    unlockLeo() { set({ leoUnlocked: true }); patchProfile({ leo_unlocked: true }); },
+    unlockJasonCat() { set({ jasonCatUnlocked: true }); patchProfile({ jasoncat_unlocked: true }); },
+    setCustomWallpaper(dataUrl: string | null) { patchProfile({ custom_wallpaper: dataUrl }); },
+    setCustomFont(font: { name: string; dataUrl: string } | null) { patchProfile({ custom_font: font }); },
+    setCustomJumpscare(dataUrl: string | null) { patchProfile({ custom_jumpscare: dataUrl }); },
+
+    async addWebApp(app: Omit<WebApp, "id">) {
+      const me = state.users.find(u => u.id === state.currentUserId);
+      const next: WebApp[] = [...(me?.webApps || []), { ...app, id: `web-${crypto.randomUUID()}` }];
+      await patchProfile({ web_apps: next });
+    },
+    async removeWebApp(id: string) {
+      const me = state.users.find(u => u.id === state.currentUserId);
+      const next = (me?.webApps || []).filter(w => w.id !== id);
+      await patchProfile({ web_apps: next });
+    },
+    async pinApp(id: string) {
+      const me = state.users.find(u => u.id === state.currentUserId);
+      const cur = me?.pinnedApps || [];
+      if (cur.includes(id)) return;
+      await patchProfile({ pinned_apps: [...cur, id] });
+    },
+    async unpinApp(id: string) {
+      const me = state.users.find(u => u.id === state.currentUserId);
+      await patchProfile({ pinned_apps: (me?.pinnedApps || []).filter(x => x !== id) });
     },
 
-    setDockSide(dockSide) {
-      state = { ...state, dockSide };
-      persist();
+    async sendGlobal(text: string) {
+      if (!state.currentUserId || !state.currentUser) return;
+      await supabase.from("global_messages").insert({ from_user: state.currentUser, from_id: state.currentUserId, text });
+      await logActivity("broadcast", text.slice(0, 80));
+    },
+    async ban(userId: string) {
+      await supabase.from("profiles").update({ banned: true }).eq("id", userId);
+      await refreshProfiles();
+      await logActivity("ban", profileRows.find(p => p.id === userId)?.username || userId);
+    },
+    async makeAdmin(userId: string) {
+      await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+      await refreshProfiles();
+      await logActivity("promote", profileRows.find(p => p.id === userId)?.username || userId);
+    },
+    async troll(targetId: string, imageUrl: string) {
+      await supabase.from("troll_events").insert({ target_id: targetId, image_url: imageUrl || null });
+      await logActivity("troll", profileRows.find(p => p.id === targetId)?.username || targetId);
+    },
+    async dismissTroll(id: string) {
+      await supabase.from("troll_events").update({ dismissed: true }).eq("id", id);
+      await refreshTrolls();
     },
 
-    setDockShape(dockShape) {
-      state = { ...state, dockShape };
-      persist();
+    async heartbeat(currentApp: string | null, route: string, mx: number, my: number) {
+      if (!state.currentUserId || !state.currentUser) return;
+      await supabase.from("presence").upsert({
+        user_id: state.currentUserId, username: state.currentUser,
+        current_app: currentApp, route,
+        mouse_x: mx, mouse_y: my,
+        viewport_w: window.innerWidth, viewport_h: window.innerHeight,
+        last_seen: new Date().toISOString(),
+      });
     },
-
-    setDockOrder(dockOrder) {
-      state = { ...state, dockOrder };
-      persist();
-    },
-
-    setDesktopIcon(id, pos) {
-      state = {
-        ...state,
-        desktopIcons: { ...state.desktopIcons, [id]: pos },
-      };
-      persist();
-    },
-
-    unlockSebastian() {
-      state = { ...state, sebastianUnlocked: true };
-      persist();
-    },
-
-    unlockLeo() {
-      state = { ...state, leoUnlocked: true };
-      persist();
-    },
-
-    unlockJasonCat() {
-      state = { ...state, jasonCatUnlocked: true };
-      persist();
-    },
-
-    setCustomWallpaper(dataUrl) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === state.currentUser
-            ? { ...u, customWallpaper: dataUrl || undefined }
-            : u
-        ),
-      };
-      persist();
-    },
-
-    setCustomFont(font) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === state.currentUser
-            ? { ...u, customFont: font || undefined }
-            : u
-        ),
-      };
-      persist();
-    },
-
-    setCustomJumpscare(dataUrl) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === state.currentUser
-            ? { ...u, customJumpscare: dataUrl || undefined }
-            : u
-        ),
-      };
-      persist();
-    },
-
-    // -------------------------
-    // WEB APPS
-    // -------------------------
-    addWebApp(app) {
-      const wa: WebApp = { ...app, id: `web-${crypto.randomUUID()}` };
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === state.currentUser
-            ? { ...u, webApps: [...(u.webApps || []), wa] }
-            : u
-        ),
-      };
-      persist();
-    },
-
-    removeWebApp(id) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === state.currentUser
-            ? { ...u, webApps: (u.webApps || []).filter((w) => w.id !== id) }
-            : u
-        ),
-      };
-      persist();
-    },
-
-    pinApp(id) {
-      state = {
-        ...state,
-        users: state.users.map((u) => {
-          if (u.username !== state.currentUser) return u;
-          const cur = u.pinnedApps || [];
-          if (cur.includes(id)) return u;
-          return { ...u, pinnedApps: [...cur, id] };
-        }),
-      };
-      persist();
-    },
-
-    unpinApp(id) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === state.currentUser
-            ? { ...u, pinnedApps: (u.pinnedApps || []).filter((x) => x !== id) }
-            : u
-        ),
-      };
-      persist();
-    },
-
-    // -------------------------
-    // GLOBAL MESSAGES
-    // -------------------------
-    sendGlobal(text) {
-      if (!state.currentUser) return;
-      const m: GlobalMessage = {
-        id: crypto.randomUUID(),
-        from: state.currentUser,
-        text,
-        ts: Date.now(),
-      };
-      state = {
-        ...state,
-        globalMessages: [...state.globalMessages, m].slice(-100),
-      };
-      persist();
-    },
-
-    // -------------------------
-    // ADMIN
-    // -------------------------
-    ban(username) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === username ? { ...u, banned: true } : u
-        ),
-      };
-      persist();
-    },
-
-    makeAdmin(username) {
-      state = {
-        ...state,
-        users: state.users.map((u) =>
-          u.username === username ? { ...u, isAdmin: true } : u
-        ),
-      };
-      persist();
-    },
-
-    troll(target, imageUrl) {
-      const t: TrollEvent = {
-        id: crypto.randomUUID(),
-        target,
-        imageUrl,
-        ts: Date.now(),
-      };
-      state = {
-        ...state,
-        trollEvents: [...state.trollEvents, t].slice(-20),
-      };
-      persist();
-    },
-
-    dismissTroll(id) {
-      state = {
-        ...state,
-        trollEvents: state.trollEvents.filter((t) => t.id !== id),
-      };
-      persist();
-    },
-
-    // -------------------------
-    // LIVE SYSTEM (NEW)
-    // -------------------------
-    userOnline(username) {
-      state = {
-        ...state,
-        liveUsers: {
-          ...state.liveUsers,
-          [username]: Date.now(),
-        },
-      };
-      persist();
-    },
-
-    userOffline(username) {
-      const next = { ...state.liveUsers };
-      delete next[username];
-      state = { ...state, liveUsers: next };
-      persist();
-    },
-
-    heartbeat(username) {
-      state = {
-        ...state,
-        liveUsers: {
-          ...state.liveUsers,
-          [username]: Date.now(),
-        },
-      };
-      persist();
-    },
-
-    pushActivity(event) {
-      state = {
-        ...state,
-        activityFeed: [
-          ...state.activityFeed,
-          { ...event, time: Date.now() },
-        ].slice(-200),
-      };
-      persist();
-    },
+    pushActivity(type: string, detail?: string) { logActivity(type, detail); },
   };
-}
-
-export function currentUserObj(s: OSState) {
-  return s.users.find((u) => u.username === s.currentUser) || null;
 }
