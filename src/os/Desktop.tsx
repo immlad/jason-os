@@ -50,6 +50,12 @@ export function Desktop() {
   const [eggMsg, setEggMsg] = useState<string | null>(null);
   const [matrix, setMatrix] = useState(false);
   const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
+  const mouseRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    function m(e: MouseEvent) { mouseRef.current = { x: e.clientX, y: e.clientY }; }
+    window.addEventListener("mousemove", m);
+    return () => window.removeEventListener("mousemove", m);
+  }, []);
 
   const phrasePool = useMemo(() => {
     const list = [...PHRASES];
