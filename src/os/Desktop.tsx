@@ -51,6 +51,8 @@ export function Desktop() {
   const [matrix, setMatrix] = useState(false);
   const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
   const mouseRef = useRef({ x: 0, y: 0 });
+
+  // Track mouse for presence
   useEffect(() => {
     function m(e: MouseEvent) { mouseRef.current = { x: e.clientX, y: e.clientY }; }
     window.addEventListener("mousemove", m);
@@ -65,7 +67,7 @@ export function Desktop() {
     return list;
   }, [os.state.sebastianUnlocked, os.state.leoUnlocked, os.state.jasonCatUnlocked]);
 
-  // Phrase rotation - randomized
+  // Phrase rotation
   useEffect(() => {
     const t = setInterval(() => {
       setPhraseIdx(Math.floor(Math.random() * phrasePool.length));
@@ -73,7 +75,7 @@ export function Desktop() {
     return () => clearInterval(t);
   }, [phrasePool.length]);
 
-  // Apply theme class + load user's saved theme on login
+  // Apply theme
   useEffect(() => {
     document.body.classList.remove("theme-cloud", "theme-night", "theme-forest", "theme-jason", "theme-sebastian", "theme-leo", "theme-jasoncat");
     document.body.classList.add(`theme-${os.state.theme}`);
@@ -81,7 +83,6 @@ export function Desktop() {
 
   useEffect(() => {
     if (me?.theme && me.theme !== os.state.theme) os.setTheme(me.theme);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.username]);
 
   // Custom font
@@ -113,53 +114,79 @@ export function Desktop() {
     }
   }, [os.state.globalMessages, seenGlobal]);
 
-  // Easter eggs: Konami + typed words
+  // Key events (Konami + typed)
   useEffect(() => {
     const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+
     function onKey(e: KeyboardEvent) {
+      os.pushActivity("typed", e.key);
+
       // Konami
       const next = [...konami, e.key].slice(-KONAMI.length);
       setKonami(next);
       if (next.join(",").toLowerCase() === KONAMI.join(",").toLowerCase()) {
+        os.pushActivity("unlock", "konami");
         setMatrix(true);
         setEggMsg("🎮 KONAMI CODE — Matrix mode!");
         setTimeout(() => setEggMsg(null), 3000);
         setTimeout(() => setMatrix(false), 8000);
       }
+
       // typed words
       if (e.key.length === 1) {
         const t = (typed + e.key.toLowerCase()).slice(-20);
         setTyped(t);
-        if (t.endsWith("jason")) { setEggMsg("👑 JASON!"); setTimeout(() => setEggMsg(null), 2000); }
-        if (t.endsWith("rosebud")) { os.unlockSebastian(); setEggMsg("🌹 Sebastian unlocked"); setTimeout(() => setEggMsg(null), 2500); }
-        if (t.endsWith("leothelegend")) { os.unlockLeo(); setEggMsg("🦁 Leo unlocked"); setTimeout(() => setEggMsg(null), 2500); }
-        if (t.endsWith("meow")) { setEggMsg("🐱 meow"); setTimeout(() => setEggMsg(null), 1500); }
+
+        if (t.endsWith("jason")) {
+          os.pushActivity("unlock", "jason");
+          setEggMsg("👑 JASON!");
+          setTimeout(() => setEggMsg(null), 2000);
+        }
+        if (t.endsWith("rosebud")) {
+          os.pushActivity("unlock", "sebastian");
+          os.unlockSebastian();
+          setEggMsg("🌹 Sebastian unlocked");
+          setTimeout(() => setEggMsg(null), 2500);
+        }
+        if (t.endsWith("leothelegend")) {
+          os.pushActivity("unlock", "leo");
+          os.unlockLeo();
+          setEggMsg("🦁 Leo unlocked");
+          setTimeout(() => setEggMsg(null), 2500);
+        }
       }
     }
+
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [konami, typed, os]);
 
-  // Corner clicks easter egg
+  // Corner clicks
   useEffect(() => {
     function onClick(e: MouseEvent) {
+      os.pushActivity("click", `${e.clientX},${e.clientY}`);
+
       const w = window.innerWidth, h = window.innerHeight, m = 40;
       const c = cornerHits.current;
       if (e.clientX < m && e.clientY < m) c.tl++;
       else if (e.clientX > w - m && e.clientY < m) c.tr++;
       else if (e.clientX < m && e.clientY > h - m) c.bl++;
       else if (e.clientX > w - m && e.clientY > h - m) c.br++;
+
       if (c.tl + c.tr + c.bl + c.br >= 12 && c.tl && c.tr && c.bl && c.br) {
         cornerHits.current = { tl: 0, tr: 0, bl: 0, br: 0 };
+        os.pushActivity("unlock", "four-corners");
         setEggMsg("✨ Four corners — secret unlocked");
         os.unlockLeo();
         setTimeout(() => setEggMsg(null), 2500);
       }
     }
+
     window.addEventListener("click", onClick);
     return () => window.removeEventListener("click", onClick);
   }, [os]);
 
+  // Apps list
   const apps = useMemo(() => {
     const list: (DockItem & { title: string; render: () => JSX.Element; size?: { w: number; h: number } })[] = [
       { id: "about", name: "About", title: "About JASON OS", Icon: Info, color: "#5e9bf5", render: () => <About /> },
@@ -168,10 +195,11 @@ export function Desktop() {
       { id: "nebulo", name: "Nebulo", title: "Nebulo", Icon: GraduationCap, color: "#10b981", render: () => <Nebulo />, size: { w: 1000, h: 640 } },
       { id: "webcreator", name: "Web Apps", title: "Web App Creator", Icon: AppWindow, color: "#f59e0b", render: () => <WebAppCreator />, size: { w: 720, h: 600 } },
     ];
+
     if (me?.isAdmin) {
       list.push({ id: "admin", name: "Admin", title: "Admin Panel", Icon: Shield, color: "#ef4444", render: () => <AdminPanel /> });
     }
-    // user-added webapps
+
     for (const w of (me?.webApps || [])) {
       list.push({
         id: w.id, name: w.name, title: w.name, Icon: Globe, color: w.color || "#5e9bf5",
@@ -180,10 +208,14 @@ export function Desktop() {
         size: { w: 1100, h: 720 },
       } as any);
     }
+
     return list;
   }, [me?.isAdmin, me?.webApps]);
 
+  // Open app
   function openApp(id: string) {
+    os.pushActivity("open-app", id);
+
     setZCounter(z => z + 1);
     setWins(w => {
       const existing = w.find(x => x.appId === id);
@@ -191,21 +223,30 @@ export function Desktop() {
       return [...w, { id: crypto.randomUUID(), appId: id, z: zCounter + 1 }];
     });
   }
+
   function focus(id: string) {
+    os.pushActivity("focus-window", id);
+
     setZCounter(z => z + 1);
     setWins(w => w.map(x => x.id === id ? { ...x, z: zCounter + 1 } : x));
   }
+
   function close(id: string) {
+    os.pushActivity("close-window", id);
     setWins(w => w.filter(x => x.id !== id));
   }
 
+  // Close all windows event
   useEffect(() => {
-    const handler = () => setWins([]);
+    const handler = () => {
+      os.pushActivity("close-all");
+      setWins([]);
+    };
     window.addEventListener("jason-close-all", handler);
     return () => window.removeEventListener("jason-close-all", handler);
   }, []);
 
-  // Live presence heartbeat
+  // Presence heartbeat
   useEffect(() => {
     if (!me) return;
     const tick = () => {
@@ -216,7 +257,6 @@ export function Desktop() {
     tick();
     const i = setInterval(tick, 1500);
     return () => clearInterval(i);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.id, wins, apps]);
 
   const wp = me?.customWallpaper || wallpapers[os.state.theme];
@@ -233,10 +273,17 @@ export function Desktop() {
     { label: "New Web App…", onClick: () => openApp("webcreator") },
     { label: "Open Settings", onClick: () => openApp("settings") },
     { separator: true, label: "" },
-    { label: "Toggle Fullscreen", onClick: async () => {
-        try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); } catch {}
-    } },
-    { label: "Close All Windows", onClick: () => setWins([]) },
+    {
+      label: "Toggle Fullscreen",
+      onClick: async () => {
+        os.pushActivity("fullscreen-toggle");
+        try {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else await document.documentElement.requestFullscreen();
+        } catch {}
+      }
+    },
+    { label: "Close All Windows", onClick: () => { os.pushActivity("close-all"); setWins([]); } },
     { separator: true, label: "" },
     { label: "Reload", onClick: () => window.location.reload() },
   ];
@@ -264,7 +311,7 @@ export function Desktop() {
         }}
       />
 
-      {/* Big JASON OS title — liquid glass */}
+      {/* Big JASON OS title */}
       <div className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-5 pointer-events-none z-10 px-4">
         <h1 className="text-7xl md:text-9xl font-black liquid-text tracking-tight">JASON OS</h1>
         <div
@@ -275,12 +322,18 @@ export function Desktop() {
             if (cur === "Leo" && !os.state.leoUnlocked) {
               const n = leoClicks + 1;
               setLeoClicks(n);
-              if (n >= 10) os.unlockLeo();
+              if (n >= 10) {
+                os.pushActivity("unlock", "leo");
+                os.unlockLeo();
+              }
             }
             if (cur === JASON_CAT_PHRASE && os.state.sebastianUnlocked && os.state.leoUnlocked && !os.state.jasonCatUnlocked) {
               const n = jasonClicks + 1;
               setJasonClicks(n);
-              if (n >= 10) os.unlockJasonCat();
+              if (n >= 10) {
+                os.pushActivity("unlock", "jasoncat");
+                os.unlockJasonCat();
+              }
             }
           }}
         >
@@ -320,12 +373,27 @@ export function Desktop() {
             { label: pinned ? "Unpin from Dock" : "Keep in Dock", onClick: () => pinned ? os.unpinApp(app.id) : os.pinApp(app.id) },
             { label: "Show All Windows", onClick: () => {} },
           ];
-          if (isWeb) items.push({ separator: true, label: "" }, { label: "Remove Web App", danger: true, onClick: () => os.removeWebApp(app.id) });
+                    if (isWeb)
+            items.push(
+              { separator: true, label: "" },
+              {
+                label: "Remove Web App",
+                danger: true,
+                onClick: () => os.removeWebApp(app.id),
+              }
+            );
           showCtx(e as any, items);
         }}
       />
 
-      {ctx && <ContextMenu x={ctx.x} y={ctx.y} items={ctx.items} onClose={() => setCtx(null)} />}
+      {ctx && (
+        <ContextMenu
+          x={ctx.x}
+          y={ctx.y}
+          items={ctx.items}
+          onClose={() => setCtx(null)}
+        />
+      )}
 
       {eggMsg && (
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 liquid-glass rounded-full px-5 py-2 z-[80] animate-fade-up text-sm font-medium os-text">
@@ -334,8 +402,14 @@ export function Desktop() {
       )}
 
       {matrix && (
-        <div className="fixed inset-0 z-[90] pointer-events-none mix-blend-screen"
-             style={{ background: "repeating-linear-gradient(0deg, rgba(0,255,80,0.08) 0 2px, transparent 2px 4px)", animation: "phraseFade 1s linear infinite" }} />
+        <div
+          className="fixed inset-0 z-[90] pointer-events-none mix-blend-screen"
+          style={{
+            background:
+              "repeating-linear-gradient(0deg, rgba(0,255,80,0.08) 0 2px, transparent 2px 4px)",
+            animation: "phraseFade 1s linear infinite",
+          }}
+        />
       )}
 
       {/* Global broadcast notification */}
@@ -343,74 +417,155 @@ export function Desktop() {
         <div className="fixed top-10 right-4 glass-strong rounded-xl p-4 max-w-sm z-[60] animate-fade-up flex gap-3 os-text">
           <Bell className="w-5 h-5 text-[hsl(var(--os-accent))]" />
           <div>
-            <div className="text-xs os-text-muted">📢 Global from {activeGlobal.from}</div>
+            <div className="text-xs os-text-muted">
+              📢 Global from {activeGlobal.from}
+            </div>
             <div className="text-sm font-medium">{activeGlobal.text}</div>
           </div>
         </div>
       )}
 
       {/* Troll overlay */}
-      {activeTroll && (() => {
-        const ev = os.state.trollEvents.find(t => t.id === activeTroll);
-        if (!ev) return null;
-        return <Jumpscare imageUrl={me?.customJumpscare || ev.imageUrl || scareImg} onDismiss={() => { os.dismissTroll(ev.id); setActiveTroll(null); }} />;
-      })()}
+      {activeTroll &&
+        (() => {
+          const ev = os.state.trollEvents.find((t) => t.id === activeTroll);
+          if (!ev) return null;
+          return (
+            <Jumpscare
+              imageUrl={me?.customJumpscare || ev.imageUrl || scareImg}
+              onDismiss={() => {
+                os.dismissTroll(ev.id);
+                setActiveTroll(null);
+              }}
+            />
+          );
+        })()}
     </div>
   );
 }
 
-function Jumpscare({ imageUrl, onDismiss }: { imageUrl: string; onDismiss: () => void }) {
+function Jumpscare({
+  imageUrl,
+  onDismiss,
+}: {
+  imageUrl: string;
+  onDismiss: () => void;
+}) {
   const [phase, setPhase] = useState<"flash" | "scare" | "calm">("flash");
+
   useEffect(() => {
-    // play screech
     try {
-      const Ctx = (window as any).AudioContext || (window as any).webkitAudioContext;
+      const Ctx =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
       const ac = new Ctx();
-      // Layered scream: dissonant oscillators + noise burst
+
       const master = ac.createGain();
       master.gain.value = 0.9;
       master.connect(ac.destination);
+
       [180, 260, 410, 720].forEach((f, i) => {
         const o = ac.createOscillator();
         const g = ac.createGain();
         o.type = i % 2 ? "square" : "sawtooth";
         o.frequency.setValueAtTime(f, ac.currentTime);
-        o.frequency.exponentialRampToValueAtTime(f * 8, ac.currentTime + 0.5);
-        o.frequency.exponentialRampToValueAtTime(f * 0.6, ac.currentTime + 2.4);
+        o.frequency.exponentialRampToValueAtTime(
+          f * 8,
+          ac.currentTime + 0.5
+        );
+        o.frequency.exponentialRampToValueAtTime(
+          f * 0.6,
+          ac.currentTime + 2.4
+        );
         g.gain.setValueAtTime(0.0001, ac.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.45, ac.currentTime + 0.04);
-        g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 2.6);
+        g.gain.exponentialRampToValueAtTime(
+          0.45,
+          ac.currentTime + 0.04
+        );
+        g.gain.exponentialRampToValueAtTime(
+          0.0001,
+          ac.currentTime + 2.6
+        );
         o.connect(g).connect(master);
         o.start();
         o.stop(ac.currentTime + 2.6);
       });
-      // White-noise burst
+
       const buf = ac.createBuffer(1, ac.sampleRate * 1.2, ac.sampleRate);
       const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      for (let i = 0; i < data.length; i++)
+        data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+
       const noise = ac.createBufferSource();
       noise.buffer = buf;
       const ng = ac.createGain();
       ng.gain.value = 0.5;
       noise.connect(ng).connect(master);
       noise.start();
-      if (navigator.vibrate) navigator.vibrate([400, 60, 600, 60, 800, 60, 400]);
+
+      if (navigator.vibrate)
+        navigator.vibrate([400, 60, 600, 60, 800, 60, 400]);
     } catch {}
+
     const t1 = setTimeout(() => setPhase("scare"), 100);
     const t2 = setTimeout(() => setPhase("calm"), 3200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
+
   return (
-    <div className="fixed inset-0 z-[9999] grid place-items-center cursor-pointer" onClick={onDismiss}>
-      <div className="absolute inset-0" style={{
-        background: phase === "flash" ? "white" : "black",
-        animation: phase === "scare" ? "phraseFade 0.12s linear infinite" : undefined,
-      }} />
+    <div
+      className="fixed inset-0 z-[9999] grid place-items-center cursor-pointer"
+      onClick={onDismiss}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background: phase === "flash" ? "white" : "black",
+          animation:
+            phase === "scare"
+              ? "phraseFade 0.12s linear infinite"
+              : undefined,
+        }}
+      />
+
       {phase !== "flash" && (
-        <div className="relative text-center w-full h-full flex flex-col items-center justify-center" style={{ animation: phase === "scare" ? "scareShake 0.06s linear infinite" : undefined }}>
-          <img src={imageUrl} alt="" className="w-screen h-screen object-cover absolute inset-0" style={{ filter: phase === "scare" ? "contrast(1.6) saturate(1.6) brightness(1.1)" : "none" }} />
-          <p className="relative mt-3 text-red-600 text-5xl md:text-8xl font-black tracking-widest" style={{ textShadow: "0 0 32px red, 0 0 12px white, 0 0 60px black" }}>BOO!</p>
-          {phase === "calm" && <p className="text-white/70 text-xs mt-2">click anywhere to dismiss</p>}
+        <div
+          className="relative text-center w-full h-full flex flex-col items-center justify-center"
+          style={{
+            animation:
+              phase === "scare"
+                ? "scareShake 0.06s linear infinite"
+                : undefined,
+          }}
+        >
+          <img
+            src={imageUrl}
+            alt=""
+            className="w-screen h-screen object-cover absolute inset-0"
+            style={{
+              filter:
+                phase === "scare"
+                  ? "contrast(1.6) saturate(1.6) brightness(1.1)"
+                  : "none",
+            }}
+          />
+          <p
+            className="relative mt-3 text-red-600 text-5xl md:text-8xl font-black tracking-widest"
+            style={{
+              textShadow:
+                "0 0 32px red, 0 0 12px white, 0 0 60px black",
+            }}
+          >
+            BOO!
+          </p>
+          {phase === "calm" && (
+            <p className="text-white/70 text-xs mt-2">
+              click anywhere to dismiss
+            </p>
+          )}
         </div>
       )}
     </div>
