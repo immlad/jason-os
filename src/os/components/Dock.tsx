@@ -22,7 +22,7 @@ interface Props {
 export function Dock({ items, onOpen, openIds, onContext }: Props) {
   const os = useOS();
   const overrideImg = themeIconOverride(os.state.theme);
-  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const pinned = new Set(me?.pinnedApps || []);
   // include only built-ins + pinned + open
   const visibleItems = items.filter(i =>
