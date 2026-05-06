@@ -129,7 +129,7 @@ function emailFor(username: string) {
 }
 async function patchProfile(patch: Record<string, any>) {
   if (!state.currentUserId) return;
-  await supabase.from("profiles").update(patch).eq("id", state.currentUserId);
+  await (supabase.from("profiles") as any).update(patch).eq("id", state.currentUserId);
   await refreshProfiles();
 }
 async function logActivity(type: string, detail?: string) {
