@@ -205,6 +205,20 @@ export function Desktop() {
     return () => window.removeEventListener("jason-close-all", handler);
   }, []);
 
+  // Live presence heartbeat
+  useEffect(() => {
+    if (!me) return;
+    const tick = () => {
+      const top = [...wins].sort((a, b) => b.z - a.z)[0];
+      const app = top ? apps.find(a => a.id === top.appId) : null;
+      os.heartbeat(app?.name || null, window.location.pathname, mouseRef.current.x, mouseRef.current.y);
+    };
+    tick();
+    const i = setInterval(tick, 1500);
+    return () => clearInterval(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id, wins, apps]);
+
   const wp = me?.customWallpaper || wallpapers[os.state.theme];
   const topWin = [...wins].sort((a, b) => b.z - a.z)[0];
   const topApp = topWin ? apps.find(a => a.id === topWin.appId) : null;
