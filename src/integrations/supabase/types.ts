@@ -14,16 +14,216 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          type: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          type: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      global_messages: {
+        Row: {
+          created_at: string
+          from_id: string | null
+          from_user: string
+          id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          from_id?: string | null
+          from_user: string
+          id?: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          from_id?: string | null
+          from_user?: string
+          id?: string
+          text?: string
+        }
+        Relationships: []
+      }
+      presence: {
+        Row: {
+          current_app: string | null
+          last_seen: string
+          mouse_x: number | null
+          mouse_y: number | null
+          route: string | null
+          user_id: string
+          username: string
+          viewport_h: number | null
+          viewport_w: number | null
+        }
+        Insert: {
+          current_app?: string | null
+          last_seen?: string
+          mouse_x?: number | null
+          mouse_y?: number | null
+          route?: string | null
+          user_id: string
+          username: string
+          viewport_h?: number | null
+          viewport_w?: number | null
+        }
+        Update: {
+          current_app?: string | null
+          last_seen?: string
+          mouse_x?: number | null
+          mouse_y?: number | null
+          route?: string | null
+          user_id?: string
+          username?: string
+          viewport_h?: number | null
+          viewport_w?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          banned: boolean
+          created_at: string
+          custom_font: Json | null
+          custom_jumpscare: string | null
+          custom_wallpaper: string | null
+          desktop_icons: Json
+          dock_order: Json
+          dock_shape: string
+          dock_side: string
+          id: string
+          jasoncat_unlocked: boolean
+          leo_unlocked: boolean
+          pinned_apps: Json
+          sebastian_unlocked: boolean
+          theme: string
+          updated_at: string
+          username: string
+          web_apps: Json
+        }
+        Insert: {
+          banned?: boolean
+          created_at?: string
+          custom_font?: Json | null
+          custom_jumpscare?: string | null
+          custom_wallpaper?: string | null
+          desktop_icons?: Json
+          dock_order?: Json
+          dock_shape?: string
+          dock_side?: string
+          id: string
+          jasoncat_unlocked?: boolean
+          leo_unlocked?: boolean
+          pinned_apps?: Json
+          sebastian_unlocked?: boolean
+          theme?: string
+          updated_at?: string
+          username: string
+          web_apps?: Json
+        }
+        Update: {
+          banned?: boolean
+          created_at?: string
+          custom_font?: Json | null
+          custom_jumpscare?: string | null
+          custom_wallpaper?: string | null
+          desktop_icons?: Json
+          dock_order?: Json
+          dock_shape?: string
+          dock_side?: string
+          id?: string
+          jasoncat_unlocked?: boolean
+          leo_unlocked?: boolean
+          pinned_apps?: Json
+          sebastian_unlocked?: boolean
+          theme?: string
+          updated_at?: string
+          username?: string
+          web_apps?: Json
+        }
+        Relationships: []
+      }
+      troll_events: {
+        Row: {
+          created_at: string
+          dismissed: boolean
+          id: string
+          image_url: string | null
+          target_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          image_url?: string | null
+          target_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          image_url?: string | null
+          target_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +350,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
