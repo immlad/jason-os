@@ -48,6 +48,7 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
       style={{ ...style, zIndex: z, boxShadow: "0 30px 80px hsl(var(--os-shadow))" }}
       onMouseDown={onFocus}
     >
+      {/* Titlebar */}
       <div
         className="h-9 flex items-center px-3 gap-2 select-none cursor-move border-b"
         style={{ borderColor: "hsl(var(--os-border))" }}
@@ -57,31 +58,43 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
         }}
         onDoubleClick={() => setMaxed((m) => !m)}
       >
-        <button
-          onClick={onClose}
-          className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110 grid place-items-center group"
-          aria-label="Close"
-        >
-          <X className="w-2 h-2 opacity-0 group-hover:opacity-100 text-black" />
-        </button>
-        <button
-          onClick={() => setMaxed(false)}
-          className="w-3 h-3 rounded-full bg-[#febc2e]"
-          aria-label="Minimize"
-        >
-          <Minus className="w-2 h-2 opacity-0 hover:opacity-100" />
-        </button>
-        <button
-          onClick={() => setMaxed((m) => !m)}
-          className="w-3 h-3 rounded-full bg-[#28c840]"
-          aria-label="Maximize"
-        >
-          <Square className="w-2 h-2 opacity-0 hover:opacity-100" />
-        </button>
-        <div className="flex-1 text-center text-xs font-medium os-text">{title}</div>
+        {/* Buttons must stay clickable */}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <button
+            onClick={onClose}
+            className="w-3 h-3 rounded-full bg-[#ff5f57] hover:brightness-110 grid place-items-center group"
+            aria-label="Close"
+          >
+            <X className="w-2 h-2 opacity-0 group-hover:opacity-100 text-black" />
+          </button>
+          <button
+            onClick={() => setMaxed(false)}
+            className="w-3 h-3 rounded-full bg-[#febc2e]"
+            aria-label="Minimize"
+          >
+            <Minus className="w-2 h-2 opacity-0 hover:opacity-100" />
+          </button>
+          <button
+            onClick={() => setMaxed((m) => !m)}
+            className="w-3 h-3 rounded-full bg-[#28c840]"
+            aria-label="Maximize"
+          >
+            <Square className="w-2 h-2 opacity-0 hover:opacity-100" />
+          </button>
+        </div>
+
+        {/* Title should NOT block clicks */}
+        <div className="flex-1 text-center text-xs font-medium os-text pointer-events-none">
+          {title}
+        </div>
+
         <div className="w-12" />
       </div>
-      <div className="flex-1 overflow-auto os-text">{children}</div>
+
+      {/* Content area MUST accept clicks */}
+      <div className="flex-1 overflow-auto os-text pointer-events-auto">
+        {children}
+      </div>
     </div>
   );
 }
