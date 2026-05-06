@@ -34,7 +34,7 @@ interface OpenWin {
 
 export function Desktop() {
   const os = useOS();
-  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const [wins, setWins] = useState<OpenWin[]>([]);
   const [zCounter, setZCounter] = useState(10);
   const [phraseIdx, setPhraseIdx] = useState(0);
@@ -93,7 +93,7 @@ export function Desktop() {
   // Troll detection
   useEffect(() => {
     if (!me) return;
-    const t = os.state.trollEvents.find(t => t.target === me.username);
+    const t = os.state.trollEvents.find(t => t.targetId === me.id);
     if (t && activeTroll !== t.id) setActiveTroll(t.id);
   }, [os.state.trollEvents, me, activeTroll]);
 
