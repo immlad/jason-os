@@ -4,7 +4,7 @@ import { Trash2, Globe } from "lucide-react";
 
 export function WebAppCreator() {
   const os = useOS();
-  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("https://");
   const [color, setColor] = useState("#5e9bf5");

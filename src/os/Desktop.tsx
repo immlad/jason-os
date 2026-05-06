@@ -34,7 +34,7 @@ interface OpenWin {
 
 export function Desktop() {
   const os = useOS();
-  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const [wins, setWins] = useState<OpenWin[]>([]);
   const [zCounter, setZCounter] = useState(10);
   const [phraseIdx, setPhraseIdx] = useState(0);
@@ -50,6 +50,12 @@ export function Desktop() {
   const [eggMsg, setEggMsg] = useState<string | null>(null);
   const [matrix, setMatrix] = useState(false);
   const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
+  const mouseRef = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    function m(e: MouseEvent) { mouseRef.current = { x: e.clientX, y: e.clientY }; }
+    window.addEventListener("mousemove", m);
+    return () => window.removeEventListener("mousemove", m);
+  }, []);
 
   const phrasePool = useMemo(() => {
     const list = [...PHRASES];
@@ -93,7 +99,7 @@ export function Desktop() {
   // Troll detection
   useEffect(() => {
     if (!me) return;
-    const t = os.state.trollEvents.find(t => t.target === me.username);
+    const t = os.state.trollEvents.find(t => t.targetId === me.id);
     if (t && activeTroll !== t.id) setActiveTroll(t.id);
   }, [os.state.trollEvents, me, activeTroll]);
 
@@ -198,6 +204,20 @@ export function Desktop() {
     window.addEventListener("jason-close-all", handler);
     return () => window.removeEventListener("jason-close-all", handler);
   }, []);
+
+  // Live presence heartbeat
+  useEffect(() => {
+    if (!me) return;
+    const tick = () => {
+      const top = [...wins].sort((a, b) => b.z - a.z)[0];
+      const app = top ? apps.find(a => a.id === top.appId) : null;
+      os.heartbeat(app?.name || null, window.location.pathname, mouseRef.current.x, mouseRef.current.y);
+    };
+    tick();
+    const i = setInterval(tick, 1500);
+    return () => clearInterval(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id, wins, apps]);
 
   const wp = me?.customWallpaper || wallpapers[os.state.theme];
   const topWin = [...wins].sort((a, b) => b.z - a.z)[0];

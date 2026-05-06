@@ -11,11 +11,12 @@ export function Boot() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-    const res = mode === "login" ? os.login(username, password) : os.signup(username, password);
+    const res = await (mode === "login" ? os.login(username, password) : os.signup(username, password));
     if (!res.ok) setErr(res.error || "Error");
+    else { try { localStorage.setItem("jason-os-last-user", username); } catch {} }
   }
 
   return (

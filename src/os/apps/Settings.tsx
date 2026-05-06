@@ -5,7 +5,7 @@ import type { ThemeName } from "../types";
 
 export function Settings() {
   const os = useOS();
-  const me = os.state.users.find(u => u.username === os.state.currentUser);
+  const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const wpRef = useRef<HTMLInputElement>(null);
   const fontRef = useRef<HTMLInputElement>(null);
   const scareRef = useRef<HTMLInputElement>(null);
@@ -162,7 +162,7 @@ export function Settings() {
           <div>
             <div className="font-semibold">{os.state.currentUser}</div>
             <div className="text-xs os-text-muted">
-              {os.state.users.find(u => u.username === os.state.currentUser)?.isAdmin ? "Administrator" : "Standard user"}
+              {me?.isAdmin ? "Administrator" : "Standard user"}
             </div>
           </div>
           <button onClick={() => os.logout()} className="px-4 py-2 rounded-2xl os-accent-bg text-white text-sm font-medium hover:brightness-110 transition">
