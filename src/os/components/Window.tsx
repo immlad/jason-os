@@ -47,10 +47,10 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
 
   // Notify Desktop to hide dock/menubar when this window is fullscreen
   useEffect(() => {
-    if (fullscreen) {
-      window.dispatchEvent(new CustomEvent("jason-fullscreen", { detail: true }));
-      return () => window.dispatchEvent(new CustomEvent("jason-fullscreen", { detail: false }));
-    }
+    window.dispatchEvent(new CustomEvent("jason-fullscreen", { detail: fullscreen }));
+    return () => {
+      if (fullscreen) window.dispatchEvent(new CustomEvent("jason-fullscreen", { detail: false }));
+    };
   }, [fullscreen]);
 
   function toggleFullscreen() {
