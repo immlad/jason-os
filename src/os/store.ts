@@ -205,21 +205,27 @@ export function useOS() {
 
     async sendGlobal(text: string) {
       if (!state.currentUserId || !state.currentUser) return;
-      await supabase.from("global_messages").insert({ from_user: state.currentUser, from_id: state.currentUserId, text });
+      const { error } = await supabase.from("global_messages").insert({ from_user: state.currentUser, from_id: state.currentUserId, text });
+      if (error) throw error;
+      await refreshMessages();
       await logActivity("broadcast", text.slice(0, 80));
     },
     async ban(userId: string) {
-      await supabase.from("profiles").update({ banned: true }).eq("id", userId);
+      const { error } = await supabase.from("profiles").update({ banned: true }).eq("id", userId);
+      if (error) throw error;
       await refreshProfiles();
       await logActivity("ban", profileRows.find(p => p.id === userId)?.username || userId);
     },
     async makeAdmin(userId: string) {
-      await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
+      if (error) throw error;
       await refreshProfiles();
       await logActivity("promote", profileRows.find(p => p.id === userId)?.username || userId);
     },
     async troll(targetId: string, imageUrl: string) {
-      await supabase.from("troll_events").insert({ target_id: targetId, image_url: imageUrl || null });
+      const { error } = await supabase.from("troll_events").insert({ target_id: targetId, image_url: imageUrl || null });
+      if (error) throw error;
+      await refreshTrolls();
       await logActivity("troll", profileRows.find(p => p.id === targetId)?.username || targetId);
     },
     async dismissTroll(id: string) {

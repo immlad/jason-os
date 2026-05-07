@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useOS } from "../store";
+import { supabase } from "@/integrations/supabase/client";
 import { Activity, Radio, Users as UsersIcon, MessageSquare, Skull, Eye } from "lucide-react";
 
 export function AdminPanel() {
@@ -15,6 +16,16 @@ export function AdminPanel() {
   if (!me?.isAdmin) return <div className="p-8 os-text-muted">Access denied. Admins only.</div>;
 
   function flash(msg: string) { setStatus(msg); setTimeout(() => setStatus(null), 2500); }
+  async function safe(label: string, fn: () => Promise<any>) {
+    try {
+      const r = await fn();
+      if (r && (r as any).error) throw (r as any).error;
+      flash(`✅ ${label}`);
+    } catch (e: any) {
+      console.error(label, e);
+      flash(`❌ ${label}: ${e?.message || e}`);
+    }
+  }
   function readFile(file: File): Promise<string> {
     return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = rej; r.readAsDataURL(file); });
   }
@@ -98,8 +109,7 @@ export function AdminPanel() {
                 className="flex-1 bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} />
               <button onClick={async () => {
                 if (!global.trim()) { flash("Enter a message first"); return; }
-                await os.sendGlobal(global.trim());
-                flash("📢 Broadcast sent live");
+                await safe("Broadcast sent", () => os.sendGlobal(global.trim()));
                 setGlobal("");
               }} className="px-4 py-2 rounded-lg os-accent-bg text-white text-sm font-medium">Send</button>
             </div>
@@ -124,8 +134,8 @@ export function AdminPanel() {
               }} />
               <button onClick={async () => {
                 if (!trollTarget) { flash("Pick a user first"); return; }
-                await os.troll(trollTarget, trollImg || "");
-                flash(`💀 Jumpscare delivered`); setTrollImg("");
+                await safe("Jumpscare delivered", () => os.troll(trollTarget, trollImg || ""));
+                setTrollImg("");
               }} className="px-4 py-2 rounded-lg bg-pink-500 text-white text-sm font-medium">Troll 'em</button>
             </div>
             {trollImg && <img src={trollImg} alt="" className="w-24 h-24 rounded-lg object-cover border border-white/30" />}
@@ -149,8 +159,10 @@ export function AdminPanel() {
                 </div>
                 {u.id !== me.id && (
                   <div className="flex gap-2">
-                    {!u.isAdmin && <button onClick={() => os.makeAdmin(u.id)} className="text-xs px-2 py-1 rounded bg-blue-500 text-white">Make Admin</button>}
-                    {!u.banned && <button onClick={() => os.ban(u.id)} className="text-xs px-2 py-1 rounded bg-red-500 text-white">Ban</button>}
+                    {!u.isAdmin && <button onClick={() => safe(`${u.username} promoted`, () => os.makeAdmin(u.id))} className="text-xs px-2 py-1 rounded bg-blue-500 text-white">Make Admin</button>}
+                    {u.isAdmin && u.id !== me.id && <button onClick={() => safe(`${u.username} demoted`, async () => { const { error } = await supabase.from("user_roles").delete().eq("user_id", u.id).eq("role","admin"); if (error) throw error; })} className="text-xs px-2 py-1 rounded bg-yellow-600 text-white">Remove Admin</button>}
+                    {!u.banned && <button onClick={() => safe(`${u.username} banned`, () => os.ban(u.id))} className="text-xs px-2 py-1 rounded bg-red-500 text-white">Ban</button>}
+                    {u.banned && <button onClick={() => safe(`${u.username} unbanned`, async () => { const { error } = await supabase.from("profiles").update({ banned: false }).eq("id", u.id); if (error) throw error; })} className="text-xs px-2 py-1 rounded bg-green-600 text-white">Unban</button>}
                   </div>
                 )}
               </div>

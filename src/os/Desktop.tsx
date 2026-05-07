@@ -49,6 +49,7 @@ export function Desktop() {
   const [typed, setTyped] = useState("");
   const [eggMsg, setEggMsg] = useState<string | null>(null);
   const [matrix, setMatrix] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -57,6 +58,13 @@ export function Desktop() {
     function m(e: MouseEvent) { mouseRef.current = { x: e.clientX, y: e.clientY }; }
     window.addEventListener("mousemove", m);
     return () => window.removeEventListener("mousemove", m);
+  }, []);
+
+  // Track fullscreen
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFs);
+    return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
   const phrasePool = useMemo(() => {
@@ -361,7 +369,7 @@ export function Desktop() {
         );
       })}
 
-      <Dock
+      {!isFullscreen && <Dock
         items={apps}
         onOpen={openApp}
         openIds={wins.map(w => w.appId)}
@@ -384,7 +392,7 @@ export function Desktop() {
             );
           showCtx(e as any, items);
         }}
-      />
+      />}
 
       {ctx && (
         <ContextMenu
