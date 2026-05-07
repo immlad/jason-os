@@ -11,6 +11,8 @@ export interface User {
   customJumpscare?: string;
   webApps?: WebApp[];
   pinnedApps?: string[];
+  screenLocked?: boolean;
+  screenLockMessage?: string | null;
 }
 
 export interface WebApp {

@@ -38,6 +38,8 @@ function rowToUser(p: any, adminIds: Set<string>): User {
     customJumpscare: p.custom_jumpscare || undefined,
     webApps: p.web_apps || [],
     pinnedApps: p.pinned_apps || [],
+    screenLocked: !!p.screen_locked,
+    screenLockMessage: p.screen_lock_message || null,
   };
 }
 
@@ -231,6 +233,19 @@ export function useOS() {
     async dismissTroll(id: string) {
       await supabase.from("troll_events").update({ dismissed: true }).eq("id", id);
       await refreshTrolls();
+    },
+
+    async lockScreen(userId: string, message?: string) {
+      const { error } = await supabase.from("profiles").update({ screen_locked: true, screen_lock_message: message || null }).eq("id", userId);
+      if (error) throw error;
+      await refreshProfiles();
+      await logActivity("lock-screen", profileRows.find(p => p.id === userId)?.username || userId);
+    },
+    async unlockScreen(userId: string) {
+      const { error } = await supabase.from("profiles").update({ screen_locked: false, screen_lock_message: null }).eq("id", userId);
+      if (error) throw error;
+      await refreshProfiles();
+      await logActivity("unlock-screen", profileRows.find(p => p.id === userId)?.username || userId);
     },
 
     async heartbeat(currentApp: string | null, route: string, mx: number, my: number) {

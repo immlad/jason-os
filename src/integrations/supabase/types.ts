@@ -116,6 +116,8 @@ export type Database = {
           jasoncat_unlocked: boolean
           leo_unlocked: boolean
           pinned_apps: Json
+          screen_lock_message: string | null
+          screen_locked: boolean
           sebastian_unlocked: boolean
           theme: string
           updated_at: string
@@ -136,6 +138,8 @@ export type Database = {
           jasoncat_unlocked?: boolean
           leo_unlocked?: boolean
           pinned_apps?: Json
+          screen_lock_message?: string | null
+          screen_locked?: boolean
           sebastian_unlocked?: boolean
           theme?: string
           updated_at?: string
@@ -156,6 +160,8 @@ export type Database = {
           jasoncat_unlocked?: boolean
           leo_unlocked?: boolean
           pinned_apps?: Json
+          screen_lock_message?: string | null
+          screen_locked?: boolean
           sebastian_unlocked?: boolean
           theme?: string
           updated_at?: string
