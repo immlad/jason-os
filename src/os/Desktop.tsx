@@ -453,6 +453,18 @@ export function Desktop() {
             />
           );
         })()}
+
+      {/* Screen lock overlay (admin shut down this user's screen) */}
+      {me?.screenLocked && (
+        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center text-white animate-fade-up">
+          <Shield className="w-20 h-20 mb-6 text-red-500 animate-pulse" />
+          <h1 className="text-4xl font-bold mb-3">Screen Disabled</h1>
+          <p className="text-lg opacity-80 max-w-md text-center px-6">
+            {me.screenLockMessage || "Your screen has been disabled by an administrator."}
+          </p>
+          <p className="text-xs opacity-50 mt-8">Waiting for admin to re-enable…</p>
+        </div>
+      )}
     </div>
   );
 }
