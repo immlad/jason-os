@@ -20,6 +20,7 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
     h: initial?.h ?? 480,
   }));
   const [maxed, setMaxed] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const dragRef = useRef<{ ox: number; oy: number } | null>(null);
 
   useEffect(() => {
@@ -38,9 +39,24 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
     };
   }, []);
 
-  const style = maxed
+  const style = fullscreen
+    ? { left: 0, top: 0, width: "100vw", height: "100vh", borderRadius: 0 }
+    : maxed
     ? { left: 0, top: 28, width: "100vw", height: "calc(100vh - 28px - 90px)" }
     : { left: pos.x, top: pos.y, width: size.w, height: size.h };
+
+  // Notify Desktop to hide dock/menubar when this window is fullscreen
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("jason-fullscreen", { detail: fullscreen }));
+    return () => {
+      if (fullscreen) window.dispatchEvent(new CustomEvent("jason-fullscreen", { detail: false }));
+    };
+  }, [fullscreen]);
+
+  function toggleFullscreen() {
+    setFullscreen(f => !f);
+    setMaxed(false);
+  }
 
   return (
     <div
@@ -53,10 +69,10 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
         className="h-9 flex items-center px-3 gap-2 select-none cursor-move border-b"
         style={{ borderColor: "hsl(var(--os-border))" }}
         onMouseDown={(e) => {
-          if (maxed) return;
+          if (maxed || fullscreen) return;
           dragRef.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y };
         }}
-        onDoubleClick={() => setMaxed((m) => !m)}
+        onDoubleClick={toggleFullscreen}
       >
         {/* Buttons must stay clickable */}
         <div className="flex items-center gap-2 pointer-events-auto">
@@ -68,16 +84,16 @@ export function Window({ title, onClose, onFocus, z, initial, children }: Props)
             <X className="w-2 h-2 opacity-0 group-hover:opacity-100 text-black" />
           </button>
           <button
-            onClick={() => setMaxed(false)}
+            onClick={() => { setMaxed(false); setFullscreen(false); }}
             className="w-3 h-3 rounded-full bg-[#febc2e]"
             aria-label="Minimize"
           >
             <Minus className="w-2 h-2 opacity-0 hover:opacity-100" />
           </button>
           <button
-            onClick={() => setMaxed((m) => !m)}
+            onClick={toggleFullscreen}
             className="w-3 h-3 rounded-full bg-[#28c840]"
-            aria-label="Maximize"
+            aria-label="Fullscreen"
           >
             <Square className="w-2 h-2 opacity-0 hover:opacity-100" />
           </button>
