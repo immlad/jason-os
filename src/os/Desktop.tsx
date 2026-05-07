@@ -60,11 +60,16 @@ export function Desktop() {
     return () => window.removeEventListener("mousemove", m);
   }, []);
 
-  // Track fullscreen
+  // Track fullscreen (browser API + window-level macOS-style fullscreen)
   useEffect(() => {
     const onFs = () => setIsFullscreen(!!document.fullscreenElement);
+    const onWinFs = (e: any) => setIsFullscreen(!!e.detail);
     document.addEventListener("fullscreenchange", onFs);
-    return () => document.removeEventListener("fullscreenchange", onFs);
+    window.addEventListener("jason-fullscreen", onWinFs as any);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs);
+      window.removeEventListener("jason-fullscreen", onWinFs as any);
+    };
   }, []);
 
   const phrasePool = useMemo(() => {
