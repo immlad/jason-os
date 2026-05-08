@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow } from "lucide-react";
+import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow, ShoppingBag } from "lucide-react";
 import { useOS } from "./store";
 import { wallpapers } from "./themes";
 import { Window } from "./components/Window";
@@ -14,6 +14,7 @@ import { Chat, Nebulo } from "./apps/LiquidAura";
 import { AdminPanel } from "./apps/AdminPanel";
 import { WebAppCreator } from "./apps/WebAppCreator";
 import { WebFrame } from "./apps/WebFrame";
+import { Shop } from "./apps/Shop";
 import scareImg from "@/assets/scare.jpg";
 
 const PHRASES = [
@@ -207,6 +208,7 @@ export function Desktop() {
       { id: "chat", name: "Chat", title: "Chat", Icon: Sparkles, color: "#7c3aed", render: () => <Chat />, size: { w: 900, h: 600 } },
       { id: "nebulo", name: "Nebulo", title: "Nebulo", Icon: GraduationCap, color: "#10b981", render: () => <Nebulo />, size: { w: 1000, h: 640 } },
       { id: "webcreator", name: "Web Apps", title: "Web App Creator", Icon: AppWindow, color: "#f59e0b", render: () => <WebAppCreator />, size: { w: 720, h: 600 } },
+      { id: "shop", name: "Shop", title: "JASON Shop", Icon: ShoppingBag, color: "#facc15", render: () => <Shop />, size: { w: 1000, h: 700 } },
     ];
 
     if (me?.isAdmin) {
