@@ -125,9 +125,11 @@ export type Database = {
           jasoncat_unlocked: boolean
           leo_unlocked: boolean
           pinned_apps: Json
+          points: number
           screen_lock_message: string | null
           screen_locked: boolean
           sebastian_unlocked: boolean
+          shop_unlocks: Json
           theme: string
           updated_at: string
           username: string
@@ -147,9 +149,11 @@ export type Database = {
           jasoncat_unlocked?: boolean
           leo_unlocked?: boolean
           pinned_apps?: Json
+          points?: number
           screen_lock_message?: string | null
           screen_locked?: boolean
           sebastian_unlocked?: boolean
+          shop_unlocks?: Json
           theme?: string
           updated_at?: string
           username: string
@@ -169,9 +173,11 @@ export type Database = {
           jasoncat_unlocked?: boolean
           leo_unlocked?: boolean
           pinned_apps?: Json
+          points?: number
           screen_lock_message?: string | null
           screen_locked?: boolean
           sebastian_unlocked?: boolean
+          shop_unlocks?: Json
           theme?: string
           updated_at?: string
           username?: string
@@ -206,18 +212,21 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string
+          expires_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -229,6 +238,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: { _amount: number; _reason: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -236,6 +249,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      purchase_item: { Args: { _item: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"
