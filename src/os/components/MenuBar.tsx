@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wifi, Battery, Settings2 } from "lucide-react";
+import { Wifi, Battery, Settings2, Coins } from "lucide-react";
 import { useOS } from "../store";
 
 function JasonLogo() {
@@ -19,6 +19,7 @@ interface Props {
 
 export function MenuBar({ appName, onAbout, onToggleControl }: Props) {
   const os = useOS();
+  const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const [time, setTime] = useState(new Date());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -94,6 +95,11 @@ export function MenuBar({ appName, onAbout, onToggleControl }: Props) {
         {Object.keys(menus).map(renderMenu)}
       </div>
       <div className="flex-1" />
+      {me && (
+        <span className="mr-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/40 text-[11px] font-semibold">
+          <Coins className="w-3 h-3 text-yellow-400" />{(me.points ?? 0).toLocaleString()}
+        </span>
+      )}
       <button onClick={onToggleControl} className="px-2 py-0.5 hover:bg-white/20 rounded flex items-center gap-2">
         <Wifi className="w-3.5 h-3.5" />
         <Battery className="w-3.5 h-3.5" />
