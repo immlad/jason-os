@@ -7,6 +7,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 export function AdminPanel() {
   const os = useOS();
   const [global, setGlobal] = useState("");
+  const [gTextSize, setGTextSize] = useState(28);
+  const [gBoxSize, setGBoxSize] = useState<"sm"|"md"|"lg"|"xl"|"full">("lg");
+  const [gDuration, setGDuration] = useState(6);
   const [trollImg, setTrollImg] = useState("");
   const [trollTarget, setTrollTarget] = useState("");
   const [status, setStatus] = useState<string | null>(null);
