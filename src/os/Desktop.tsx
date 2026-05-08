@@ -230,6 +230,7 @@ export function Desktop() {
   // Open app
   function openApp(id: string) {
     os.pushActivity("open-app", id);
+    os.awardPoints(5, `open-${id}`);
 
     setZCounter(z => z + 1);
     setWins(w => {
