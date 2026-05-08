@@ -193,6 +193,7 @@ export function useOS() {
       const me = state.users.find(u => u.id === state.currentUserId);
       const next: WebApp[] = [...(me?.webApps || []), { ...app, id: `web-${crypto.randomUUID()}` }];
       await patchProfile({ web_apps: next });
+      try { await (supabase as any).rpc("award_points", { _amount: 50, _reason: "create-webapp" }); await refreshProfiles(); } catch {}
     },
     async removeWebApp(id: string) {
       const me = state.users.find(u => u.id === state.currentUserId);
