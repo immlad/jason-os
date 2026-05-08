@@ -11,7 +11,7 @@ export function Chat() {
 export function Nebulo() {
   return (
     <iframe
-      src="https://turbolearning.imaginelearningmath.com/"
+      src="https://nebulo.bostoncareercounselor.com/"
       className="w-full h-full border-0"
       title="Nebulo"
     />
