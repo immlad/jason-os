@@ -139,7 +139,38 @@ export function AdminPanel() {
                 )}
                 <div className="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-red-500 text-white animate-pulse">● LIVE</div>
               </div>
-              <div className="text-[10px] os-text-muted">Updates every ~1.5s. Mouse cursor reflects target user in real time.</div>
+              {(() => {
+                const userActivity = os.state.activityFeed.filter(a => a.userId === mirrorUser.userId).slice(0, 40);
+                const typedRecent = userActivity.filter(a => a.type === "typed").slice(0, 30).map(a => a.detail).reverse().join("");
+                return (
+                  <div className="grid md:grid-cols-2 gap-3 mt-3">
+                    <div className="rounded-xl p-3 border" style={{ borderColor: "hsl(var(--os-border))", background: "hsl(var(--os-glass))" }}>
+                      <div className="text-xs font-semibold mb-2 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> What they're doing right now</div>
+                      <div className="space-y-1 max-h-64 overflow-auto text-[11px]">
+                        {userActivity.length === 0 && <div className="os-text-muted">No activity yet…</div>}
+                        {userActivity.map(a => (
+                          <div key={a.id} className="flex items-center justify-between gap-2 py-0.5">
+                            <div><span className="px-1.5 py-0.5 rounded bg-white/10 mr-1.5">{a.type}</span><span className="os-text-muted">{a.detail || ""}</span></div>
+                            <span className="os-text-muted text-[9px]">{new Date(a.time).toLocaleTimeString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-xl p-3 border space-y-2" style={{ borderColor: "hsl(var(--os-border))", background: "hsl(var(--os-glass))" }}>
+                      <div className="text-xs font-semibold mb-1">Recent keystrokes</div>
+                      <div className="font-mono text-xs p-2 rounded bg-black/40 text-green-400 break-all min-h-12">{typedRecent || "—"}</div>
+                      <div className="text-xs font-semibold mt-2">Live stats</div>
+                      <div className="text-[11px] os-text-muted space-y-0.5">
+                        <div>Last seen: {Math.round((Date.now() - mirrorUser.lastSeen)/1000)}s ago</div>
+                        <div>Cursor: ({mirrorUser.mouseX}, {mirrorUser.mouseY})</div>
+                        <div>Active app: <b className="os-text">{mirrorUser.currentApp || "Desktop"}</b></div>
+                        <div>Route: {mirrorUser.route}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="text-[10px] os-text-muted mt-2">Updates ~1.5s. Cursor, app, route, keystrokes & every action reflect target user in real time.</div>
             </div>
           ) : <div className="text-xs os-text-muted">Pick an online user above to mirror their screen.</div>}
         </section>
