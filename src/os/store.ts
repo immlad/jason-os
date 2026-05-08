@@ -267,5 +267,20 @@ export function useOS() {
       });
     },
     pushActivity(type: string, detail?: string) { logActivity(type, detail); },
+
+    async awardPoints(amount: number, reason: string) {
+      if (!state.currentUserId) return;
+      try {
+        await (supabase as any).rpc("award_points", { _amount: amount, _reason: reason });
+        await refreshProfiles();
+      } catch (e) { console.warn("awardPoints failed", e); }
+    },
+
+    async purchaseItem(item: string) {
+      const { data, error } = await (supabase as any).rpc("purchase_item", { _item: item });
+      if (error) throw error;
+      await refreshProfiles();
+      return data;
+    },
   };
 }
