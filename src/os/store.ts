@@ -40,6 +40,8 @@ function rowToUser(p: any, adminIds: Set<string>): User {
     pinnedApps: p.pinned_apps || [],
     screenLocked: !!p.screen_locked,
     screenLockMessage: p.screen_lock_message || null,
+    points: p.points || 0,
+    shopUnlocks: p.shop_unlocks || [],
   };
 }
 
