@@ -168,11 +168,37 @@ export function AdminPanel() {
                 className="flex-1 bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} />
               <button onClick={async () => {
                 if (!global.trim()) { flash("Enter a message first"); return; }
-                await safe("Broadcast sent", () => os.sendGlobal(global.trim()));
+                await safe("Broadcast sent", () => os.sendGlobal(global.trim(), { textSize: gTextSize, boxSize: gBoxSize, durationMs: gDuration * 1000 }));
                 setGlobal("");
               }} className="px-4 py-2 rounded-lg os-accent-bg text-white text-sm font-medium">Send</button>
             </div>
-            <div className="text-xs os-text-muted">Appears instantly on every user's screen via realtime.</div>
+            <div className="grid sm:grid-cols-3 gap-3 pt-2">
+              <label className="text-xs space-y-1 block">
+                <span className="os-text-muted">Text size: <b>{gTextSize}px</b></span>
+                <input type="range" min={12} max={96} value={gTextSize} onChange={e => setGTextSize(+e.target.value)} className="w-full" />
+              </label>
+              <label className="text-xs space-y-1 block">
+                <span className="os-text-muted">Box size</span>
+                <select value={gBoxSize} onChange={e => setGBoxSize(e.target.value as any)} className="w-full bg-transparent border rounded-lg px-2 py-1.5" style={{ borderColor: "hsl(var(--os-border))" }}>
+                  <option value="sm">Small</option>
+                  <option value="md">Medium</option>
+                  <option value="lg">Large</option>
+                  <option value="xl">Extra Large</option>
+                  <option value="full">Full Width</option>
+                </select>
+              </label>
+              <label className="text-xs space-y-1 block">
+                <span className="os-text-muted">Duration: <b>{gDuration}s</b></span>
+                <input type="range" min={2} max={30} value={gDuration} onChange={e => setGDuration(+e.target.value)} className="w-full" />
+              </label>
+            </div>
+            <div className="rounded-xl border p-4 mt-2" style={{ borderColor: "hsl(var(--os-border))", background: "hsl(var(--os-glass))" }}>
+              <div className="text-[10px] os-text-muted mb-2">PREVIEW</div>
+              <div className="font-semibold leading-snug" style={{ fontSize: `${gTextSize}px` }}>
+                {global.trim() || "Your announcement preview…"}
+              </div>
+            </div>
+            <div className="text-xs os-text-muted">Appears centered on every user's screen via realtime.</div>
           </section>
 
           <section className="glass rounded-xl p-4 space-y-3">
