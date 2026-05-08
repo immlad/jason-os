@@ -13,6 +13,8 @@ export interface User {
   pinnedApps?: string[];
   screenLocked?: boolean;
   screenLockMessage?: string | null;
+  points?: number;
+  shopUnlocks?: string[];
 }
 
 export interface WebApp {
