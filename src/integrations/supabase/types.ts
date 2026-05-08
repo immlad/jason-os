@@ -43,25 +43,34 @@ export type Database = {
       }
       global_messages: {
         Row: {
+          box_size: string
           created_at: string
+          duration_ms: number
           from_id: string | null
           from_user: string
           id: string
           text: string
+          text_size: number
         }
         Insert: {
+          box_size?: string
           created_at?: string
+          duration_ms?: number
           from_id?: string | null
           from_user: string
           id?: string
           text: string
+          text_size?: number
         }
         Update: {
+          box_size?: string
           created_at?: string
+          duration_ms?: number
           from_id?: string | null
           from_user?: string
           id?: string
           text?: string
+          text_size?: number
         }
         Relationships: []
       }

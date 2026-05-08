@@ -43,7 +43,7 @@ export function Desktop() {
   const [showCC, setShowCC] = useState(false);
   const [activeTroll, setActiveTroll] = useState<string | null>(null);
   const [seenGlobal, setSeenGlobal] = useState<string[]>([]);
-  const [activeGlobal, setActiveGlobal] = useState<{ from: string; text: string } | null>(null);
+  const [activeGlobal, setActiveGlobal] = useState<{ from: string; text: string; textSize: number; boxSize: string } | null>(null);
   const [ctx, setCtx] = useState<{ x: number; y: number; items: MenuEntry[] } | null>(null);
   const [konami, setKonami] = useState<string[]>([]);
   const [typed, setTyped] = useState("");
@@ -122,8 +122,8 @@ export function Desktop() {
     const last = os.state.globalMessages[os.state.globalMessages.length - 1];
     if (last && !seenGlobal.includes(last.id)) {
       setSeenGlobal(s => [...s, last.id]);
-      setActiveGlobal({ from: last.from, text: last.text });
-      setTimeout(() => setActiveGlobal(null), 6000);
+      setActiveGlobal({ from: last.from, text: last.text, textSize: last.textSize ?? 18, boxSize: last.boxSize ?? "md" });
+      setTimeout(() => setActiveGlobal(null), last.durationMs ?? 6000);
     }
   }, [os.state.globalMessages, seenGlobal]);
 
@@ -425,18 +425,24 @@ export function Desktop() {
         />
       )}
 
-      {/* Global broadcast notification */}
-      {activeGlobal && (
-        <div className="fixed top-10 right-4 glass-strong rounded-xl p-4 max-w-sm z-[60] animate-fade-up flex gap-3 os-text">
-          <Bell className="w-5 h-5 text-[hsl(var(--os-accent))]" />
-          <div>
-            <div className="text-xs os-text-muted">
-              📢 Global from {activeGlobal.from}
+      {/* Global broadcast — centered overlay */}
+      {activeGlobal && (() => {
+        const widthMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", full: "max-w-[90vw]" };
+        const padMap: Record<string, string> = { sm: "p-5", md: "p-7", lg: "p-9", xl: "p-12", full: "p-14" };
+        return (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none animate-fade-up">
+            <div className={`glass-strong rounded-3xl ${padMap[activeGlobal.boxSize] || padMap.md} ${widthMap[activeGlobal.boxSize] || widthMap.md} w-full mx-6 os-text shadow-2xl border border-white/20`}>
+              <div className="flex items-center gap-2 text-xs os-text-muted mb-3">
+                <Bell className="w-4 h-4 text-[hsl(var(--os-accent))]" />
+                📢 Announcement from {activeGlobal.from}
+              </div>
+              <div className="font-semibold leading-snug" style={{ fontSize: `${activeGlobal.textSize}px` }}>
+                {activeGlobal.text}
+              </div>
             </div>
-            <div className="text-sm font-medium">{activeGlobal.text}</div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Troll overlay */}
       {activeTroll &&

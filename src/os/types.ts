@@ -28,6 +28,9 @@ export interface GlobalMessage {
   from: string;
   text: string;
   ts: number;
+  textSize?: number;
+  boxSize?: "sm" | "md" | "lg" | "xl" | "full";
+  durationMs?: number;
 }
 
 export interface TrollEvent {

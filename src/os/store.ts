@@ -70,7 +70,10 @@ async function refreshProfiles() {
 
 async function refreshMessages() {
   const { data } = await supabase.from("global_messages").select("*").order("created_at", { ascending: true }).limit(100);
-  set({ globalMessages: (data || []).map((m: any) => ({ id: m.id, from: m.from_user, text: m.text, ts: new Date(m.created_at).getTime() })) });
+  set({ globalMessages: (data || []).map((m: any) => ({
+    id: m.id, from: m.from_user, text: m.text, ts: new Date(m.created_at).getTime(),
+    textSize: m.text_size ?? 18, boxSize: m.box_size ?? "md", durationMs: m.duration_ms ?? 6000,
+  })) });
 }
 async function refreshTrolls() {
   const { data } = await supabase.from("troll_events").select("*").eq("dismissed", false);
@@ -205,9 +208,12 @@ export function useOS() {
       await patchProfile({ pinned_apps: (me?.pinnedApps || []).filter(x => x !== id) });
     },
 
-    async sendGlobal(text: string) {
+    async sendGlobal(text: string, opts?: { textSize?: number; boxSize?: string; durationMs?: number }) {
       if (!state.currentUserId || !state.currentUser) return;
-      const { error } = await supabase.from("global_messages").insert({ from_user: state.currentUser, from_id: state.currentUserId, text });
+      const { error } = await supabase.from("global_messages").insert({
+        from_user: state.currentUser, from_id: state.currentUserId, text,
+        text_size: opts?.textSize ?? 18, box_size: opts?.boxSize ?? "md", duration_ms: opts?.durationMs ?? 6000,
+      } as any);
       if (error) throw error;
       await refreshMessages();
       await logActivity("broadcast", text.slice(0, 80));

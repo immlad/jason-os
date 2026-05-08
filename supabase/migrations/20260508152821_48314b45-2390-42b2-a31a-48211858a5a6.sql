@@ -1,0 +1,1 @@
+ALTER TABLE public.global_messages ADD COLUMN IF NOT EXISTS text_size integer NOT NULL DEFAULT 18, ADD COLUMN IF NOT EXISTS box_size text NOT NULL DEFAULT 'md', ADD COLUMN IF NOT EXISTS duration_ms integer NOT NULL DEFAULT 6000;
