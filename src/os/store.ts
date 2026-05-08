@@ -40,6 +40,8 @@ function rowToUser(p: any, adminIds: Set<string>): User {
     pinnedApps: p.pinned_apps || [],
     screenLocked: !!p.screen_locked,
     screenLockMessage: p.screen_lock_message || null,
+    points: p.points || 0,
+    shopUnlocks: p.shop_unlocks || [],
   };
 }
 
@@ -191,6 +193,7 @@ export function useOS() {
       const me = state.users.find(u => u.id === state.currentUserId);
       const next: WebApp[] = [...(me?.webApps || []), { ...app, id: `web-${crypto.randomUUID()}` }];
       await patchProfile({ web_apps: next });
+      try { await (supabase as any).rpc("award_points", { _amount: 50, _reason: "create-webapp" }); await refreshProfiles(); } catch {}
     },
     async removeWebApp(id: string) {
       const me = state.users.find(u => u.id === state.currentUserId);
@@ -265,5 +268,20 @@ export function useOS() {
       });
     },
     pushActivity(type: string, detail?: string) { logActivity(type, detail); },
+
+    async awardPoints(amount: number, reason: string) {
+      if (!state.currentUserId) return;
+      try {
+        await (supabase as any).rpc("award_points", { _amount: amount, _reason: reason });
+        await refreshProfiles();
+      } catch (e) { console.warn("awardPoints failed", e); }
+    },
+
+    async purchaseItem(item: string) {
+      const { data, error } = await (supabase as any).rpc("purchase_item", { _item: item });
+      if (error) throw error;
+      await refreshProfiles();
+      return data;
+    },
   };
 }
