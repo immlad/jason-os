@@ -144,6 +144,7 @@ export function Desktop() {
       setKonami(next);
       if (next.join(",").toLowerCase() === KONAMI.join(",").toLowerCase()) {
         os.pushActivity("unlock", "konami");
+        os.discoverAchievement("konami");
         setMatrix(true);
         setEggMsg("🎮 KONAMI CODE — Matrix mode!");
         setTimeout(() => setEggMsg(null), 3000);
@@ -160,15 +161,27 @@ export function Desktop() {
           setEggMsg("👑 JASON!");
           setTimeout(() => setEggMsg(null), 2000);
         }
+        if (t.endsWith("jasonking")) {
+          os.discoverAchievement("jasonking");
+          setEggMsg("👑 jasonking — secret found");
+          setTimeout(() => setEggMsg(null), 2500);
+        }
+        if (t.endsWith("iceman")) {
+          os.discoverAchievement("whisper_iceman");
+          setEggMsg("❄️ whisper of iceman");
+          setTimeout(() => setEggMsg(null), 2500);
+        }
         if (t.endsWith("rosebud")) {
           os.pushActivity("unlock", "sebastian");
           os.unlockSebastian();
+          os.discoverAchievement("rosebud");
           setEggMsg("🌹 Sebastian unlocked");
           setTimeout(() => setEggMsg(null), 2500);
         }
         if (t.endsWith("leothelegend")) {
           os.pushActivity("unlock", "leo");
           os.unlockLeo();
+          os.discoverAchievement("leothelegend");
           setEggMsg("🦁 Leo unlocked");
           setTimeout(() => setEggMsg(null), 2500);
         }
@@ -183,6 +196,18 @@ export function Desktop() {
   useEffect(() => {
     function onClick(e: MouseEvent) {
       os.pushActivity("click", `${e.clientX},${e.clientY}`);
+      lastInputRef.current = Date.now();
+
+      // Speed clicker — 30 clicks in 5s
+      const nowT = Date.now();
+      clickTimes.current.push(nowT);
+      clickTimes.current = clickTimes.current.filter(t => nowT - t < 5000);
+      if (clickTimes.current.length >= 30) {
+        clickTimes.current = [];
+        os.discoverAchievement("speed_clicker");
+        setEggMsg("⚡ Speed clicker!");
+        setTimeout(() => setEggMsg(null), 2000);
+      }
 
       const w = window.innerWidth, h = window.innerHeight, m = 40;
       const c = cornerHits.current;
@@ -194,6 +219,7 @@ export function Desktop() {
       if (c.tl + c.tr + c.bl + c.br >= 12 && c.tl && c.tr && c.bl && c.br) {
         cornerHits.current = { tl: 0, tr: 0, bl: 0, br: 0 };
         os.pushActivity("unlock", "four-corners");
+        os.discoverAchievement("four_corners");
         setEggMsg("✨ Four corners — secret unlocked");
         os.unlockLeo();
         setTimeout(() => setEggMsg(null), 2500);
@@ -201,7 +227,18 @@ export function Desktop() {
     }
 
     window.addEventListener("click", onClick);
-    return () => window.removeEventListener("click", onClick);
+    window.addEventListener("keydown", () => { lastInputRef.current = Date.now(); });
+    window.addEventListener("mousemove", () => { lastInputRef.current = Date.now(); });
+    // Ghost idle — no input for 60s
+    const idleTimer = setInterval(() => {
+      if (Date.now() - lastInputRef.current > 60000) {
+        os.discoverAchievement("ghost_idle");
+      }
+    }, 5000);
+    // Midnight owl — opened during 00:00-00:05 local
+    const hh = new Date().getHours(), mm = new Date().getMinutes();
+    if (hh === 0 && mm < 5) os.discoverAchievement("midnight_owl");
+    return () => { window.removeEventListener("click", onClick); clearInterval(idleTimer); };
   }, [os]);
 
   // Apps list
