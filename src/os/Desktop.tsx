@@ -53,6 +53,10 @@ export function Desktop() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
   const mouseRef = useRef({ x: 0, y: 0 });
+  const clickTimes = useRef<number[]>([]);
+  const lastInputRef = useRef<number>(Date.now());
+  const titleClicksRef = useRef<{ n: number; t: number }>({ n: 0, t: 0 });
+  const openedAppsRef = useRef<Set<string>>(new Set());
 
   // Track mouse for presence
   useEffect(() => {
@@ -230,8 +234,10 @@ export function Desktop() {
   // Open app
   function openApp(id: string) {
     os.pushActivity("open-app", id);
-    os.awardPoints(5, `open-${id}`);
-
+    // Track for "app_collector" achievement (open 8 distinct apps in one session)
+    openedAppsRef.current.add(id);
+    if (openedAppsRef.current.size >= 8) os.discoverAchievement("app_collector");
+    if (id === "shop") os.discoverAchievement("shop_curious");
     setZCounter(z => z + 1);
     setWins(w => {
       const existing = w.find(x => x.appId === id);
