@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useOS } from "../store";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, Radio, Users as UsersIcon, MessageSquare, Skull, Eye, Lock, Unlock, Monitor, Coins, LogOut, BrushCleaning, Palette } from "lucide-react";
+import { Activity, Radio, Users as UsersIcon, MessageSquare, Skull, Eye, Lock, Unlock, Monitor, Coins, LogOut, Eraser } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export function AdminPanel() {
@@ -300,7 +300,7 @@ export function AdminPanel() {
                       : <button onClick={() => safe(`${u.username} screen re-enabled`, () => os.unlockScreen(u.id))} className="text-xs px-2 py-1 rounded bg-green-600 text-white">Unlock Screen</button>}
                     <button onClick={() => safe(`${u.username} points reset`, () => os.adminResetPoints(u.id))} className="text-xs px-2 py-1 rounded bg-purple-600 text-white flex items-center gap-1"><Coins className="w-3 h-3" />Reset Pts ({u.points || 0})</button>
                     <button onClick={() => safe(`${u.username} kicked`, () => os.kickUser(u.id))} className="text-xs px-2 py-1 rounded bg-orange-600 text-white flex items-center gap-1"><LogOut className="w-3 h-3" />Kick</button>
-                    <button onClick={() => safe(`Cleared trolls for ${u.username}`, () => os.clearTrollsFor(u.id))} className="text-xs px-2 py-1 rounded bg-cyan-600 text-white flex items-center gap-1"><BrushCleaning className="w-3 h-3" />Clear Trolls</button>
+                    <button onClick={() => safe(`Cleared trolls for ${u.username}`, () => os.clearTrollsFor(u.id))} className="text-xs px-2 py-1 rounded bg-cyan-600 text-white flex items-center gap-1"><Eraser className="w-3 h-3" />Clear Trolls</button>
                     <select defaultValue="" onChange={async (e) => { const t = e.target.value; if (!t) return; await safe(`${u.username} theme → ${t}`, () => os.adminSetTheme(u.id, t as any)); e.target.value = ""; }}
                       className="text-xs px-2 py-1 rounded bg-white/10" title="Force theme">
                       <option value="">🎨 Theme…</option>
