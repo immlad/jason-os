@@ -372,7 +372,21 @@ export function Desktop() {
 
       {/* Big JASON OS title */}
       <div className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-5 pointer-events-none z-10 px-4">
-        <h1 className="text-7xl md:text-9xl font-black liquid-text tracking-tight">JASON OS</h1>
+        <h1
+          className="text-7xl md:text-9xl font-black liquid-text tracking-tight pointer-events-auto cursor-default"
+          onClick={() => {
+            const nowT = Date.now();
+            const r = titleClicksRef.current;
+            if (nowT - r.t > 600) r.n = 0;
+            r.n++; r.t = nowT;
+            if (r.n >= 3) {
+              r.n = 0;
+              os.discoverAchievement("logo_triple_click");
+              setEggMsg("✨ Logo secret found");
+              setTimeout(() => setEggMsg(null), 2000);
+            }
+          }}
+        >JASON OS</h1>
         <div
           key={phraseIdx}
           className="animate-fade-up pointer-events-auto cursor-default"
@@ -471,13 +485,13 @@ export function Desktop() {
         />
       )}
 
-      {/* Global broadcast — centered overlay */}
+      {/* Global broadcast — top overlay */}
       {activeGlobal && (() => {
         const widthMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", full: "max-w-[90vw]" };
-        const padMap: Record<string, string> = { sm: "p-5", md: "p-7", lg: "p-9", xl: "p-12", full: "p-14" };
+        const padMap: Record<string, string> = { sm: "p-4", md: "p-5", lg: "p-7", xl: "p-9", full: "p-10" };
         return (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none animate-fade-up">
-            <div className={`glass-strong rounded-3xl ${padMap[activeGlobal.boxSize] || padMap.md} ${widthMap[activeGlobal.boxSize] || widthMap.md} w-full mx-6 os-text shadow-2xl border border-white/20`}>
+          <div className="fixed top-10 inset-x-0 z-[150] flex justify-center pointer-events-none animate-fade-up px-4">
+            <div className={`glass-strong rounded-2xl ${padMap[activeGlobal.boxSize] || padMap.md} ${widthMap[activeGlobal.boxSize] || widthMap.md} w-full os-text shadow-2xl border border-white/20`}>
               <div className="flex items-center gap-2 text-xs os-text-muted mb-3">
                 <Bell className="w-4 h-4 text-[hsl(var(--os-accent))]" />
                 📢 Announcement from {activeGlobal.from}
