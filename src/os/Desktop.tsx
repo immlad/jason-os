@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow, ShoppingBag } from "lucide-react";
+import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow, ShoppingBag, Trophy } from "lucide-react";
 import { useOS } from "./store";
 import { wallpapers } from "./themes";
 import { Window } from "./components/Window";
@@ -15,6 +15,7 @@ import { AdminPanel } from "./apps/AdminPanel";
 import { WebAppCreator } from "./apps/WebAppCreator";
 import { WebFrame } from "./apps/WebFrame";
 import { Shop } from "./apps/Shop";
+import { Achievements } from "./apps/Achievements";
 import scareImg from "@/assets/scare.jpg";
 
 const PHRASES = [
@@ -251,6 +252,7 @@ export function Desktop() {
       { id: "nebulo", name: "Nebulo", title: "Nebulo", Icon: GraduationCap, color: "#10b981", render: () => <Nebulo />, size: { w: 1000, h: 640 } },
       { id: "webcreator", name: "Web Apps", title: "Web App Creator", Icon: AppWindow, color: "#f59e0b", render: () => <WebAppCreator />, size: { w: 720, h: 600 } },
       { id: "shop", name: "Shop", title: "JASON Shop", Icon: ShoppingBag, color: "#facc15", render: () => <Shop />, size: { w: 1000, h: 700 } },
+      { id: "achievements", name: "Achievements", title: "Achievements", Icon: Trophy, color: "#eab308", render: () => <Achievements />, size: { w: 920, h: 640 } },
     ];
 
     if (me?.isAdmin) {
