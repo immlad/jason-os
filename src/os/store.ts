@@ -42,6 +42,8 @@ function rowToUser(p: any, adminIds: Set<string>): User {
     screenLockMessage: p.screen_lock_message || null,
     points: p.points || 0,
     shopUnlocks: p.shop_unlocks || [],
+    achievementsDiscovered: p.achievements_discovered || [],
+    achievementsClaimed: p.achievements_claimed || [],
   };
 }
 
@@ -282,6 +284,36 @@ export function useOS() {
       if (error) throw error;
       await refreshProfiles();
       return data;
+    },
+
+    async discoverAchievement(id: string) {
+      try {
+        await (supabase as any).rpc("discover_achievement", { _id: id });
+        await refreshProfiles();
+      } catch (e) { console.warn("discover failed", e); }
+    },
+    async claimAchievement(id: string) {
+      const { data, error } = await (supabase as any).rpc("claim_achievement", { _id: id });
+      if (error) throw error;
+      await refreshProfiles();
+      return data;
+    },
+    async adminResetPoints(userId: string) {
+      const { error } = await (supabase as any).rpc("admin_reset_points", { _target: userId });
+      if (error) throw error;
+      await refreshProfiles();
+    },
+    async kickUser(userId: string) {
+      await supabase.from("presence").delete().eq("user_id", userId);
+      await refreshPresence();
+    },
+    async clearTrollsFor(userId: string) {
+      await supabase.from("troll_events").update({ dismissed: true }).eq("target_id", userId).eq("dismissed", false);
+      await refreshTrolls();
+    },
+    async adminSetTheme(userId: string, theme: ThemeName) {
+      await (supabase.from("profiles") as any).update({ theme }).eq("id", userId);
+      await refreshProfiles();
     },
   };
 }
