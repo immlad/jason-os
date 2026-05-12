@@ -15,6 +15,8 @@ export interface User {
   screenLockMessage?: string | null;
   points?: number;
   shopUnlocks?: string[];
+  achievementsDiscovered?: string[];
+  achievementsClaimed?: string[];
 }
 
 export interface WebApp {

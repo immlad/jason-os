@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow, ShoppingBag } from "lucide-react";
+import { Info, Settings as SettingsIcon, Sparkles, GraduationCap, Shield, Bell, Globe, AppWindow, ShoppingBag, Trophy } from "lucide-react";
 import { useOS } from "./store";
 import { wallpapers } from "./themes";
 import { Window } from "./components/Window";
@@ -15,6 +15,7 @@ import { AdminPanel } from "./apps/AdminPanel";
 import { WebAppCreator } from "./apps/WebAppCreator";
 import { WebFrame } from "./apps/WebFrame";
 import { Shop } from "./apps/Shop";
+import { Achievements } from "./apps/Achievements";
 import scareImg from "@/assets/scare.jpg";
 
 const PHRASES = [
@@ -53,6 +54,11 @@ export function Desktop() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const cornerHits = useRef<{ tl: number; tr: number; bl: number; br: number }>({ tl: 0, tr: 0, bl: 0, br: 0 });
   const mouseRef = useRef({ x: 0, y: 0 });
+  const clickTimes = useRef<number[]>([]);
+  const lastInputRef = useRef<number>(Date.now());
+  const titleClicksRef = useRef<{ n: number; t: number }>({ n: 0, t: 0 });
+  const openedAppsRef = useRef<Set<string>>(new Set());
+  const dismissedTrollsRef = useRef<number>(0);
 
   // Track mouse for presence
   useEffect(() => {
@@ -140,6 +146,7 @@ export function Desktop() {
       setKonami(next);
       if (next.join(",").toLowerCase() === KONAMI.join(",").toLowerCase()) {
         os.pushActivity("unlock", "konami");
+        os.discoverAchievement("konami");
         setMatrix(true);
         setEggMsg("🎮 KONAMI CODE — Matrix mode!");
         setTimeout(() => setEggMsg(null), 3000);
@@ -156,15 +163,27 @@ export function Desktop() {
           setEggMsg("👑 JASON!");
           setTimeout(() => setEggMsg(null), 2000);
         }
+        if (t.endsWith("jasonking")) {
+          os.discoverAchievement("jasonking");
+          setEggMsg("👑 jasonking — secret found");
+          setTimeout(() => setEggMsg(null), 2500);
+        }
+        if (t.endsWith("iceman")) {
+          os.discoverAchievement("whisper_iceman");
+          setEggMsg("❄️ whisper of iceman");
+          setTimeout(() => setEggMsg(null), 2500);
+        }
         if (t.endsWith("rosebud")) {
           os.pushActivity("unlock", "sebastian");
           os.unlockSebastian();
+          os.discoverAchievement("rosebud");
           setEggMsg("🌹 Sebastian unlocked");
           setTimeout(() => setEggMsg(null), 2500);
         }
         if (t.endsWith("leothelegend")) {
           os.pushActivity("unlock", "leo");
           os.unlockLeo();
+          os.discoverAchievement("leothelegend");
           setEggMsg("🦁 Leo unlocked");
           setTimeout(() => setEggMsg(null), 2500);
         }
@@ -179,6 +198,18 @@ export function Desktop() {
   useEffect(() => {
     function onClick(e: MouseEvent) {
       os.pushActivity("click", `${e.clientX},${e.clientY}`);
+      lastInputRef.current = Date.now();
+
+      // Speed clicker — 30 clicks in 5s
+      const nowT = Date.now();
+      clickTimes.current.push(nowT);
+      clickTimes.current = clickTimes.current.filter(t => nowT - t < 5000);
+      if (clickTimes.current.length >= 30) {
+        clickTimes.current = [];
+        os.discoverAchievement("speed_clicker");
+        setEggMsg("⚡ Speed clicker!");
+        setTimeout(() => setEggMsg(null), 2000);
+      }
 
       const w = window.innerWidth, h = window.innerHeight, m = 40;
       const c = cornerHits.current;
@@ -190,6 +221,7 @@ export function Desktop() {
       if (c.tl + c.tr + c.bl + c.br >= 12 && c.tl && c.tr && c.bl && c.br) {
         cornerHits.current = { tl: 0, tr: 0, bl: 0, br: 0 };
         os.pushActivity("unlock", "four-corners");
+        os.discoverAchievement("four_corners");
         setEggMsg("✨ Four corners — secret unlocked");
         os.unlockLeo();
         setTimeout(() => setEggMsg(null), 2500);
@@ -197,7 +229,18 @@ export function Desktop() {
     }
 
     window.addEventListener("click", onClick);
-    return () => window.removeEventListener("click", onClick);
+    window.addEventListener("keydown", () => { lastInputRef.current = Date.now(); });
+    window.addEventListener("mousemove", () => { lastInputRef.current = Date.now(); });
+    // Ghost idle — no input for 60s
+    const idleTimer = setInterval(() => {
+      if (Date.now() - lastInputRef.current > 60000) {
+        os.discoverAchievement("ghost_idle");
+      }
+    }, 5000);
+    // Midnight owl — opened during 00:00-00:05 local
+    const hh = new Date().getHours(), mm = new Date().getMinutes();
+    if (hh === 0 && mm < 5) os.discoverAchievement("midnight_owl");
+    return () => { window.removeEventListener("click", onClick); clearInterval(idleTimer); };
   }, [os]);
 
   // Apps list
@@ -209,6 +252,7 @@ export function Desktop() {
       { id: "nebulo", name: "Nebulo", title: "Nebulo", Icon: GraduationCap, color: "#10b981", render: () => <Nebulo />, size: { w: 1000, h: 640 } },
       { id: "webcreator", name: "Web Apps", title: "Web App Creator", Icon: AppWindow, color: "#f59e0b", render: () => <WebAppCreator />, size: { w: 720, h: 600 } },
       { id: "shop", name: "Shop", title: "JASON Shop", Icon: ShoppingBag, color: "#facc15", render: () => <Shop />, size: { w: 1000, h: 700 } },
+      { id: "achievements", name: "Achievements", title: "Achievements", Icon: Trophy, color: "#eab308", render: () => <Achievements />, size: { w: 920, h: 640 } },
     ];
 
     if (me?.isAdmin) {
@@ -230,8 +274,10 @@ export function Desktop() {
   // Open app
   function openApp(id: string) {
     os.pushActivity("open-app", id);
-    os.awardPoints(5, `open-${id}`);
-
+    // Track for "app_collector" achievement (open 8 distinct apps in one session)
+    openedAppsRef.current.add(id);
+    if (openedAppsRef.current.size >= 8) os.discoverAchievement("app_collector");
+    if (id === "shop") os.discoverAchievement("shop_curious");
     setZCounter(z => z + 1);
     setWins(w => {
       const existing = w.find(x => x.appId === id);
@@ -329,7 +375,21 @@ export function Desktop() {
 
       {/* Big JASON OS title */}
       <div className="absolute inset-x-0 top-[18%] flex flex-col items-center gap-5 pointer-events-none z-10 px-4">
-        <h1 className="text-7xl md:text-9xl font-black liquid-text tracking-tight">JASON OS</h1>
+        <h1
+          className="text-7xl md:text-9xl font-black liquid-text tracking-tight pointer-events-auto cursor-default"
+          onClick={() => {
+            const nowT = Date.now();
+            const r = titleClicksRef.current;
+            if (nowT - r.t > 600) r.n = 0;
+            r.n++; r.t = nowT;
+            if (r.n >= 3) {
+              r.n = 0;
+              os.discoverAchievement("logo_triple_click");
+              setEggMsg("✨ Logo secret found");
+              setTimeout(() => setEggMsg(null), 2000);
+            }
+          }}
+        >JASON OS</h1>
         <div
           key={phraseIdx}
           className="animate-fade-up pointer-events-auto cursor-default"
@@ -428,13 +488,13 @@ export function Desktop() {
         />
       )}
 
-      {/* Global broadcast — centered overlay */}
+      {/* Global broadcast — top overlay */}
       {activeGlobal && (() => {
         const widthMap: Record<string, string> = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl", full: "max-w-[90vw]" };
-        const padMap: Record<string, string> = { sm: "p-5", md: "p-7", lg: "p-9", xl: "p-12", full: "p-14" };
+        const padMap: Record<string, string> = { sm: "p-4", md: "p-5", lg: "p-7", xl: "p-9", full: "p-10" };
         return (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none animate-fade-up">
-            <div className={`glass-strong rounded-3xl ${padMap[activeGlobal.boxSize] || padMap.md} ${widthMap[activeGlobal.boxSize] || widthMap.md} w-full mx-6 os-text shadow-2xl border border-white/20`}>
+          <div className="fixed top-10 inset-x-0 z-[150] flex justify-center pointer-events-none animate-fade-up px-4">
+            <div className={`glass-strong rounded-2xl ${padMap[activeGlobal.boxSize] || padMap.md} ${widthMap[activeGlobal.boxSize] || widthMap.md} w-full os-text shadow-2xl border border-white/20`}>
               <div className="flex items-center gap-2 text-xs os-text-muted mb-3">
                 <Bell className="w-4 h-4 text-[hsl(var(--os-accent))]" />
                 📢 Announcement from {activeGlobal.from}
@@ -458,6 +518,8 @@ export function Desktop() {
               onDismiss={() => {
                 os.dismissTroll(ev.id);
                 setActiveTroll(null);
+                dismissedTrollsRef.current++;
+                if (dismissedTrollsRef.current >= 3) os.discoverAchievement("jumpscare_survivor");
               }}
             />
           );

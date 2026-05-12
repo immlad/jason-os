@@ -112,6 +112,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          achievements_claimed: Json
+          achievements_discovered: Json
           banned: boolean
           created_at: string
           custom_font: Json | null
@@ -136,6 +138,8 @@ export type Database = {
           web_apps: Json
         }
         Insert: {
+          achievements_claimed?: Json
+          achievements_discovered?: Json
           banned?: boolean
           created_at?: string
           custom_font?: Json | null
@@ -160,6 +164,8 @@ export type Database = {
           web_apps?: Json
         }
         Update: {
+          achievements_claimed?: Json
+          achievements_discovered?: Json
           banned?: boolean
           created_at?: string
           custom_font?: Json | null
@@ -238,10 +244,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_reset_points: { Args: { _target: string }; Returns: Json }
       award_points: {
         Args: { _amount: number; _reason: string }
         Returns: number
       }
+      claim_achievement: { Args: { _id: string }; Returns: Json }
+      discover_achievement: { Args: { _id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
