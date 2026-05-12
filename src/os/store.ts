@@ -82,7 +82,6 @@ async function refreshMessages() {
 async function refreshTrolls() {
   const { data } = await supabase.from("troll_events").select("*").eq("dismissed", false);
   const me = state.currentUserId;
-  set({ trollEvents: (data || []).map((t: any) => ({ id: t.id, target: profileRows.find(p => p.id === t.target_id)?.username || "", targetId: t.target_id, imageUrl: t.image_url || "", ts: new Date(t.created_at).getTime() })) });
   set({ trollEvents: (data || []).map((t: any) => ({ id: t.id, target: profileRows.find(p => p.id === t.target_id)?.username || "", targetId: t.target_id, imageUrl: t.image_url || "", ts: new Date(t.created_at).getTime(), durationMs: t.duration_ms })) });
 }
 async function refreshPresence() {
