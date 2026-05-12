@@ -515,6 +515,7 @@ export function Desktop() {
           return (
             <Jumpscare
               imageUrl={me?.customJumpscare || ev.imageUrl || scareImg}
+              durationMs={ev.durationMs ?? 3500}
               onDismiss={() => {
                 os.dismissTroll(ev.id);
                 setActiveTroll(null);
