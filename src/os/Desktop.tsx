@@ -57,6 +57,7 @@ export function Desktop() {
   const lastInputRef = useRef<number>(Date.now());
   const titleClicksRef = useRef<{ n: number; t: number }>({ n: 0, t: 0 });
   const openedAppsRef = useRef<Set<string>>(new Set());
+  const dismissedTrollsRef = useRef<number>(0);
 
   // Track mouse for presence
   useEffect(() => {
@@ -515,6 +516,8 @@ export function Desktop() {
               onDismiss={() => {
                 os.dismissTroll(ev.id);
                 setActiveTroll(null);
+                dismissedTrollsRef.current++;
+                if (dismissedTrollsRef.current >= 3) os.discoverAchievement("jumpscare_survivor");
               }}
             />
           );
