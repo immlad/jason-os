@@ -1,5 +1,5 @@
 import { Trophy, Lock, Check, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useOS } from "../store";
 
 const ACHIEVEMENTS: { id: string; name: string; hint: string; reward: number }[] = [
@@ -23,6 +23,8 @@ export function Achievements() {
   const me = os.state.users.find(u => u.id === os.state.currentUserId);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [custom, setCustom] = useState<{ id: string; name: string; hint: string; reward: number }[]>([]);
+  useEffect(() => { os.listCustomAchievements().then(setCustom); }, []);
 
   const discovered = new Set(me?.achievementsDiscovered || []);
   const claimed = new Set(me?.achievementsClaimed || []);
@@ -39,7 +41,8 @@ export function Achievements() {
     } finally { setBusy(null); }
   }
 
-  const totalDone = ACHIEVEMENTS.filter(a => claimed.has(a.id)).length;
+  const all = [...ACHIEVEMENTS, ...custom.map(c => ({ ...c }))];
+  const totalDone = all.filter(a => claimed.has(a.id)).length;
 
   return (
     <div className="p-6 space-y-5">
@@ -50,7 +53,7 @@ export function Achievements() {
       {msg && <div className="text-xs px-3 py-1.5 rounded-full bg-green-500/80 text-white inline-block animate-fade-up">{msg}</div>}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {ACHIEVEMENTS.map(a => {
+        {all.map(a => {
           const isDiscovered = discovered.has(a.id);
           const isClaimed = claimed.has(a.id);
           return (
