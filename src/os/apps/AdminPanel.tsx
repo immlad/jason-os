@@ -16,6 +16,16 @@ export function AdminPanel() {
   const [tab, setTab] = useState<string>("live");
   const [mirrorUserId, setMirrorUserId] = useState<string | null>(null);
   const [lockMsg, setLockMsg] = useState("");
+  const [trollDuration, setTrollDuration] = useState(3.5);
+  const [pointsTarget, setPointsTarget] = useState("");
+  const [pointsDelta, setPointsDelta] = useState(100);
+  const [pointsReason, setPointsReason] = useState("");
+  const [achId, setAchId] = useState("");
+  const [achName, setAchName] = useState("");
+  const [achHint, setAchHint] = useState("");
+  const [achReward, setAchReward] = useState(100);
+  const [grantTarget, setGrantTarget] = useState("");
+  const [grantId, setGrantId] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const me = os.state.users.find(u => u.id === os.state.currentUserId);
@@ -250,12 +260,74 @@ export function AdminPanel() {
               }} />
               <button onClick={async () => {
                 if (!trollTarget) { flash("Pick a user first"); return; }
-                await safe("Jumpscare delivered", () => os.troll(trollTarget, trollImg || ""));
+                await safe("Jumpscare delivered", () => os.trollWithDuration(trollTarget, trollImg || "", Math.round(trollDuration * 1000)));
                 setTrollImg("");
               }} className="px-4 py-2 rounded-lg bg-pink-500 text-white text-sm font-medium">Troll 'em</button>
             </div>
+            <label className="text-xs space-y-1 block">
+              <span className="os-text-muted">Jumpscare duration: <b>{trollDuration}s</b></span>
+              <input type="range" min={1} max={20} step={0.5} value={trollDuration} onChange={e => setTrollDuration(+e.target.value)} className="w-full" />
+            </label>
             {trollImg && <img src={trollImg} alt="" className="w-24 h-24 rounded-lg object-cover border border-white/30" />}
           </section>
+
+        <section className="glass rounded-xl p-4 space-y-3">
+          <h2 className="font-semibold flex items-center gap-2"><Coins className="w-4 h-4" /> Give / Take Points</h2>
+          <div className="grid sm:grid-cols-4 gap-2">
+            <select value={pointsTarget} onChange={e => setPointsTarget(e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }}>
+              <option value="">Select user…</option>
+              {os.state.users.map(u => <option key={u.id} value={u.id}>{u.username} ({u.points || 0}pts)</option>)}
+            </select>
+            <input type="number" value={pointsDelta} onChange={e => setPointsDelta(+e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="±points" />
+            <input value={pointsReason} onChange={e => setPointsReason(e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="reason (optional)" />
+            <button onClick={async () => {
+              if (!pointsTarget || !pointsDelta) { flash("Pick user & non-zero amount"); return; }
+              await safe(`Adjusted ${pointsDelta > 0 ? "+" : ""}${pointsDelta}`, () => os.adminAdjustPoints(pointsTarget, pointsDelta, pointsReason));
+            }} className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium">Apply</button>
+          </div>
+          <div className="text-[11px] os-text-muted">Use negative numbers to subtract. Range: -100000 to +100000. Won't go below 0.</div>
+        </section>
+
+        <section className="glass rounded-xl p-4 space-y-3">
+          <h2 className="font-semibold">Create Custom Achievement</h2>
+          <div className="grid sm:grid-cols-4 gap-2">
+            <input value={achId} onChange={e => setAchId(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g,""))}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="id (e.g. cool_kid)" />
+            <input value={achName} onChange={e => setAchName(e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="Name" />
+            <input value={achHint} onChange={e => setAchHint(e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="Hint" />
+            <div className="flex gap-2">
+              <input type="number" min={0} max={10000} value={achReward} onChange={e => setAchReward(+e.target.value)}
+                className="flex-1 bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="reward" />
+              <button onClick={async () => {
+                if (!achId || !achName || !achHint) { flash("Fill all fields"); return; }
+                await safe(`Created ${achId}`, () => os.createCustomAchievement(achId, achName, achHint, achReward));
+                setAchId(""); setAchName(""); setAchHint("");
+              }} className="px-3 py-2 rounded-lg os-accent-bg text-white text-sm font-medium">Create</button>
+            </div>
+          </div>
+
+          <h3 className="font-semibold text-sm pt-2">Grant Achievement to User</h3>
+          <div className="grid sm:grid-cols-3 gap-2">
+            <select value={grantTarget} onChange={e => setGrantTarget(e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }}>
+              <option value="">Select user…</option>
+              {os.state.users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
+            </select>
+            <input value={grantId} onChange={e => setGrantId(e.target.value)}
+              className="bg-transparent border rounded-lg px-3 py-2 text-sm" style={{ borderColor: "hsl(var(--os-border))" }} placeholder="achievement id" />
+            <button onClick={async () => {
+              if (!grantTarget || !grantId) { flash("Pick user & id"); return; }
+              await safe(`Granted ${grantId}`, () => os.adminGrantAchievement(grantTarget, grantId));
+              setGrantId("");
+            }} className="px-4 py-2 rounded-lg bg-yellow-600 text-white text-sm font-medium">Grant</button>
+          </div>
+          <div className="text-[11px] os-text-muted">User still has to claim it in the Achievements app to receive points.</div>
+        </section>
 
         <section className="glass rounded-xl p-4 space-y-3">
           <h2 className="font-semibold flex items-center gap-2"><Lock className="w-4 h-4" /> Shut Down a Screen</h2>

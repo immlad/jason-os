@@ -515,6 +515,7 @@ export function Desktop() {
           return (
             <Jumpscare
               imageUrl={me?.customJumpscare || ev.imageUrl || scareImg}
+              durationMs={ev.durationMs ?? 3500}
               onDismiss={() => {
                 os.dismissTroll(ev.id);
                 setActiveTroll(null);
@@ -543,9 +544,11 @@ export function Desktop() {
 function Jumpscare({
   imageUrl,
   onDismiss,
+  durationMs = 3500,
 }: {
   imageUrl: string;
   onDismiss: () => void;
+  durationMs?: number;
 }) {
   const [phase, setPhase] = useState<"flash" | "scare" | "calm">("flash");
 
@@ -603,7 +606,7 @@ function Jumpscare({
     } catch {}
 
     const t1 = setTimeout(() => setPhase("scare"), 100);
-    const t2 = setTimeout(() => setPhase("calm"), 3200);
+    const t2 = setTimeout(() => setPhase("calm"), Math.max(400, durationMs - 300));
 
     return () => {
       clearTimeout(t1);

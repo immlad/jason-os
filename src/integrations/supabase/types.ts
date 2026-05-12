@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_achievements: {
+        Row: {
+          created_at: string
+          created_by: string
+          hint: string
+          id: string
+          name: string
+          reward: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          hint: string
+          id: string
+          name: string
+          reward: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          hint?: string
+          id?: string
+          name?: string
+          reward?: number
+        }
+        Relationships: []
+      }
       global_messages: {
         Row: {
           box_size: string
@@ -195,6 +222,7 @@ export type Database = {
         Row: {
           created_at: string
           dismissed: boolean
+          duration_ms: number
           id: string
           image_url: string | null
           target_id: string
@@ -202,6 +230,7 @@ export type Database = {
         Insert: {
           created_at?: string
           dismissed?: boolean
+          duration_ms?: number
           id?: string
           image_url?: string | null
           target_id: string
@@ -209,6 +238,7 @@ export type Database = {
         Update: {
           created_at?: string
           dismissed?: boolean
+          duration_ms?: number
           id?: string
           image_url?: string | null
           target_id?: string
@@ -244,6 +274,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_points: {
+        Args: { _delta: number; _reason: string; _target: string }
+        Returns: number
+      }
+      admin_grant_achievement: {
+        Args: { _id: string; _target: string }
+        Returns: Json
+      }
       admin_reset_points: { Args: { _target: string }; Returns: Json }
       award_points: {
         Args: { _amount: number; _reason: string }

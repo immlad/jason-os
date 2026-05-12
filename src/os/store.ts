@@ -82,7 +82,7 @@ async function refreshMessages() {
 async function refreshTrolls() {
   const { data } = await supabase.from("troll_events").select("*").eq("dismissed", false);
   const me = state.currentUserId;
-  set({ trollEvents: (data || []).map((t: any) => ({ id: t.id, target: profileRows.find(p => p.id === t.target_id)?.username || "", targetId: t.target_id, imageUrl: t.image_url || "", ts: new Date(t.created_at).getTime() })) });
+  set({ trollEvents: (data || []).map((t: any) => ({ id: t.id, target: profileRows.find(p => p.id === t.target_id)?.username || "", targetId: t.target_id, imageUrl: t.image_url || "", ts: new Date(t.created_at).getTime(), durationMs: t.duration_ms })) });
 }
 async function refreshPresence() {
   const { data } = await supabase.from("presence").select("*");
@@ -236,7 +236,13 @@ export function useOS() {
       await logActivity("promote", profileRows.find(p => p.id === userId)?.username || userId);
     },
     async troll(targetId: string, imageUrl: string) {
-      const { error } = await supabase.from("troll_events").insert({ target_id: targetId, image_url: imageUrl || null });
+      const { error } = await (supabase.from("troll_events") as any).insert({ target_id: targetId, image_url: imageUrl || null });
+      if (error) throw error;
+      await refreshTrolls();
+      await logActivity("troll", profileRows.find(p => p.id === targetId)?.username || targetId);
+    },
+    async trollWithDuration(targetId: string, imageUrl: string, durationMs: number) {
+      const { error } = await (supabase.from("troll_events") as any).insert({ target_id: targetId, image_url: imageUrl || null, duration_ms: durationMs });
       if (error) throw error;
       await refreshTrolls();
       await logActivity("troll", profileRows.find(p => p.id === targetId)?.username || targetId);
@@ -314,6 +320,28 @@ export function useOS() {
     async adminSetTheme(userId: string, theme: ThemeName) {
       await (supabase.from("profiles") as any).update({ theme }).eq("id", userId);
       await refreshProfiles();
+    },
+    async adminAdjustPoints(userId: string, delta: number, reason: string) {
+      const { error } = await (supabase as any).rpc("admin_adjust_points", { _target: userId, _delta: delta, _reason: reason });
+      if (error) throw error;
+      await refreshProfiles();
+    },
+    async adminGrantAchievement(userId: string, id: string) {
+      const { error } = await (supabase as any).rpc("admin_grant_achievement", { _target: userId, _id: id });
+      if (error) throw error;
+      await refreshProfiles();
+    },
+    async createCustomAchievement(id: string, name: string, hint: string, reward: number) {
+      const { error } = await (supabase.from("custom_achievements") as any).insert({ id, name, hint, reward, created_by: state.currentUserId });
+      if (error) throw error;
+    },
+    async deleteCustomAchievement(id: string) {
+      const { error } = await supabase.from("custom_achievements").delete().eq("id", id);
+      if (error) throw error;
+    },
+    async listCustomAchievements() {
+      const { data } = await supabase.from("custom_achievements").select("*").order("created_at", { ascending: false });
+      return (data || []) as { id: string; name: string; hint: string; reward: number }[];
     },
   };
 }

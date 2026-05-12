@@ -43,6 +43,7 @@ export interface TrollEvent {
   targetId: string;
   imageUrl: string;
   ts: number;
+  durationMs?: number;
 }
 
 export interface PresenceRow {
